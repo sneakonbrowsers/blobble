@@ -3,884 +3,626 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blobble AI</title>
+    <title>BlobbleBrain AI App</title>
     
+
+<script src="https://cdn.tailwindcss.com"></script>
+    
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS STYLING */
-        
-        /* General Setup for Full Viewport Layout */
         body {
-            background-color: black; 
-            position: relative; 
-            height: 100vh; 
-            margin: 0;
-            font-family: sans-serif;
-            color: white;
-            overflow: hidden; 
+            font-family: 'Inter', sans-serif;
+            background-color: #000;
+            color: #fff;
+            overflow: hidden; /* Prevent scroll for the full-screen effect */
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
         }
-
-        #app {
-            position: relative;
+        #app-container {
             width: 100vw;
             height: 100vh;
+            position: relative;
+            overflow: hidden;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
         }
 
-        /* --- Positioning Elements - Default (Normal Mode) Styles --- */
-
-        /* 1. Blob positioning */
-        #blobblebrain {
+        /* Base Blob Styling (Invisible by default, rendered by JS) */
+        .blob {
+            position: absolute;
             width: 200px;
-            height: 180px;
-            z-index: 10;
-            position: absolute;
-            /* Default non-jiggling shape, will be overridden by the morph animation */
-            border-radius: 40% 60% 70% 30% / 50% 60% 30% 70%; 
+            height: 200px;
+            background-color: transparent; /* Changed to transparent, color set by JS */
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            /* Transition for color and size changes when switching modes */
-            transition: all 0.5s ease-out, background-color 0.5s, box-shadow 0.5s, top 0.5s, left 0.5s, width 0.5s, height 0.5s; 
-        }
-        
-        /* 2. Exit Buttons at Top Right */
-        .exit-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
+            font-size: 24px;
             font-weight: bold;
-            z-index: 20; 
-            display: none; /* Hidden by default */
-            transition: background-color 0.2s;
+            transition: all 0.5s ease-in-out, background-color 0.8s ease;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); /* Soft shadow */
+            animation: jiggle 4s infinite ease-in-out, morph 8s ease-in-out infinite both;
+            z-index: 10;
         }
 
-        #exit-research-mode {
-            background-color: #FF4500; /* Red for research */
+        /* Specific Blob Styles */
+        #normal-blob {
+            background-color: #3b82f6; /* Blue */
+            box-shadow: 0 0 30px #3b82f6;
+            top: 5%; /* Higher */
+            left: 50%;
+            transform: translateX(-50%);
         }
-        #exit-research-mode:hover {
-             background-color: #CC3700;
+        #research-blob {
+            background-color: #ef4444; /* Red */
+            box-shadow: 0 0 30px #ef4444;
+            top: 50%; /* Default for research */
+            left: calc(100% - 150px); /* Top Right Corner */
+            transform: translate(-50%, -50%); /* Centered on its own corner point */
+            width: 150px; /* Smaller in corner */
+            height: 150px;
+        }
+        #image-blob {
+            background-color: #9333ea; /* Purple */
+            box-shadow: 0 0 30px #9333ea;
+            top: 50%; /* Default for image */
+            left: 150px; /* Top Left Corner */
+            transform: translate(-50%, -50%); /* Centered on its own corner point */
+            width: 150px; /* Smaller in corner */
+            height: 150px;
         }
 
-        #exit-image-mode {
-            background-color: #8A2BE2; /* Purple for image mode */
-        }
-        #exit-image-mode:hover {
-            background-color: #6A1BA0;
+        .eye {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #000;
+            border-radius: 50%;
         }
 
-        /* 3. Response Box in the Middle */
+        .left-eye {
+            left: 35%;
+            top: 40%;
+        }
+
+        .right-eye {
+            right: 35%;
+            top: 40%;
+        }
+
+        .mouth {
+            position: absolute;
+            width: 40px;
+            height: 5px;
+            background-color: #000;
+            border-radius: 2px;
+            top: 60%;
+        }
+
+        /* Smaller eye/mouth for corner blobs */
+        .corner-blob .eye {
+            width: 12px;
+            height: 12px;
+        }
+        .corner-blob .mouth {
+            width: 25px;
+            height: 3px;
+        }
+
+
         #response-bubble {
             position: absolute;
-            padding: 25px;
-            /* background-color handled by JS for clean mode */
-            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent */
+            backdrop-filter: blur(8px); /* Glassmorphism effect */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1.5rem; /* More rounded */
+            padding: 2rem; 
+            max-width: 600px; /* Wider */
+            min-height: 80px;
+            
+            /* SCROLLING FEATURE - Increased max-height */
+            max-height: 60vh; 
             overflow-y: auto; 
-            font-size: 1.1em;
-            /* Shadow handled by JS for clean mode */
-            transition: all 0.5s;
-            text-align: center; /* Default center align for normal mode */
-        }
 
-        /* 4. Sources Area (Research Mode only) */
-        #sources-area {
-            position: absolute;
-            z-index: 5;
-            transition: all 0.5s;
-            background-color: #222; /* Sources background in Research Mode */
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 0.9em;
-            /* Hiding it by default in CSS as well */
-            display: none; 
-        }
-
-        /* 5. Image Display Area (New for Image Mode) */
-        #image-display-area {
-            position: absolute;
-            top: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            transition: all 0.5s ease-in-out;
+            top: 45%; /* Centered vertically */
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%;
-            height: 70%;
-            max-width: 800px;
-            max-height: 500px;
-            overflow: hidden;
-            display: none; /* Hidden by default */
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
-            background-color: #1a1a1a; /* Placeholder background */
-            justify-content: center;
-            align-items: center;
-            color: #ccc;
-            font-size: 1.2em;
-            text-align: center;
-            /* --- ADDED BORDER FOR VISIBILITY --- */
-            border: 3px solid #8A2BE2; 
+            opacity: 1;
+            z-index: 5;
         }
         
-        /* Ensure canvas and image fit the display area */
-        #image-display-area > * {
-            max-width: 100%;
-            max-height: 100%;
-            display: block;
-            object-fit: contain;
-            border-radius: 15px;
+        /* This rule ensures content inside the scrollable area has safe padding */
+        #response-bubble pre {
+            white-space: pre-wrap;
+            margin: 0;
+            padding: 0.5rem 0; /* Extra top/bottom padding for safer scrolling */
+            text-align: left;
+            width: 100%;
+            box-sizing: border-box;
         }
 
-        #generated-image {
-            display:none; /* Hide by default */
-        }
 
-        /* 6. Input Area - CRITICAL FIX: Set default position in CSS for visibility */
         #input-area {
             position: absolute;
+            bottom: 30px; /* Fixed at bottom */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%; /* Wider input */
+            max-width: 700px;
             display: flex;
             gap: 10px;
-            z-index: 15;
-            transition: all 0.5s;
-            padding: 10px 0; 
-
-            /* --- GUARANTEED POSITION FOR NORMAL MODE --- */
-            bottom: 20px; 
-            left: 50%;
-            transform: translateX(-50%); /* Centered */
-            width: 90%;
-            max-width: 700px;
-            /* ------------------------------------------ */
+            z-index: 20; /* Ensure it's always on top */
+            padding: 10px; /* Padding for better visibility */
+            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background for the bar */
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
         }
 
         #user-input {
             flex-grow: 1;
-            padding: 10px 15px;
-            /* New clean look for input */
-            border: 1px solid #333;
-            border-radius: 50px; /* Fully rounded pill shape */
-            background-color: #1a1a1a; 
-            color: white;
-            font-size: 1em;
+            padding: 0.8rem 1.2rem;
+            border: none;
+            border-radius: 0.8rem;
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            font-size: 1rem;
             outline: none;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6); 
-            transition: border-color 0.2s, box-shadow 0.2s;
+            transition: background-color 0.2s, box-shadow 0.2s;
         }
-
         #user-input:focus {
-            border-color: #007AFF; /* Blue focus border */
-            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.6); /* Blue outer glow on focus */
+            background-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+        #user-input::placeholder {
+            color: #bbb;
         }
 
         #send-button {
-            padding: 10px 20px;
+            background-color: #3b82f6;
             color: white;
-            border: none;
-            border-radius: 50px; /* Fully rounded pill shape */
+            padding: 0.8rem 1.5rem;
+            border-radius: 0.8rem;
+            font-weight: 600;
             cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
-            white-space: nowrap; 
+            transition: background-color 0.2s, transform 0.1s;
         }
-
+        #send-button:hover {
+            background-color: #2563eb;
+            transform: translateY(-1px);
+        }
         #send-button:disabled {
-            background-color: #555 !important;
+            background-color: #60a5f8;
             cursor: not-allowed;
         }
 
-        /* --- JIGGLE ANIMATIONS --- */
-
-        /* 1. Shape morphing animation for realistic skin wobble */
-        @keyframes morph {
-            0% { border-radius: 40% 60% 70% 30% / 50% 60% 30% 70%; }
-            33% { border-radius: 60% 40% 50% 50% / 60% 30% 70% 40%; }
-            66% { border-radius: 70% 30% 60% 40% / 40% 70% 30% 60%; }
-            100% { border-radius: 40% 60% 70% 30% / 50% 60% 30% 70%; }
-        }
-
-        /* 2. Positional jiggle for centered blobs (Normal/Research) - includes vertical floating and rotation */
-        @keyframes jiggle-center {
-            0% { transform: translate(-50%, 0) rotate(0deg); }
-            25% { transform: translate(-50%, -8px) rotate(0.5deg); } 
-            50% { transform: translate(-50%, 0) rotate(0deg); }
-            75% { transform: translate(-50%, 8px) rotate(-0.5deg); }
-            100% { transform: translate(-50%, 0) rotate(0deg); }
-        }
-        
-        /* 3. Positional jiggle for corner blobs (Image Mode) - uses small relative shifts and rotation */
-        @keyframes jiggle-corner {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            25% { transform: translate(1px, -1px) rotate(0.5deg); }
-            55% { transform: translate(0, 0) rotate(0deg); }
-            80% { transform: translate(-1px, 1px) rotate(-0.5deg); }
-            100% { transform: translate(0, 0) rotate(0deg); }
-        }
-
-        /* Classes to apply the specific jiggle AND the shape morphing */
-        .jiggling-center {
-            /* Combine positional jiggle and shape morphing */
-            animation: jiggle-center 4s ease-in-out infinite, morph 8s ease-in-out infinite;
-        }
-
-        .jiggling-corner {
-            /* Combine positional jiggle and shape morphing */
-            animation: jiggle-corner 4s ease-in-out infinite, morph 8s ease-in-out infinite;
-        }
-
-        /* Face Features */
-        .eyes {
-            display: flex;
-            gap: 30px;
-            position: absolute;
-            top: 50px;
-        }
-        
-        /* Adjust face features for smaller blobs (Image Mode and Shrunk Research Blob) */
-        #blobblebrain.shrunk-mode .eyes {
-            top: 30px; 
-            gap: 15px;
-        }
-        #blobblebrain.image-mode .eyes {
-            top: 30px;
-            gap: 15px;
-        }
-
-        .eye {
-            width: 20px;
-            height: 25px;
-            background-color: white;
+        #loader {
+            border: 4px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            box-shadow: inset 0 0 0 5px black;
+            border-top: 4px solid #3b82f6;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none; /* Hidden by default */
+            margin-left: 10px;
         }
-        
-        /* Adjust eye size for smaller blobs */
-        #blobblebrain.shrunk-mode .eye,
-        #blobblebrain.image-mode .eye {
-            width: 15px;
-            height: 20px;
-            box-shadow: inset 0 0 0 3px black;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .mouth {
-            width: 40px;
-            height: 5px;
-            background-color: black;
-            border-radius: 2px;
-            position: absolute;
-            bottom: 60px;
+        @keyframes jiggle {
+            0% { transform: translateX(-50%) translateY(0px) rotate(0deg); }
+            25% { transform: translateX(-50%) translateY(2px) rotate(0.5deg); }
+            50% { transform: translateX(-50%) translateY(0px) rotate(0deg); }
+            75% { transform: translateX(-50%) translateY(-2px) rotate(-0.5deg); }
+            100% { transform: translateX(-50%) translateY(0px) rotate(0deg); }
+        }
+
+        @keyframes morph {
+            0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+            33% { border-radius: 70% 30% 50% 50% / 60% 40% 40% 60%; }
+            66% { border-radius: 50% 50% 30% 70% / 50% 60% 40% 40%; }
+        }
+
+        /* Image Mode Specific Styling */
+        #image-output-container {
+            width: 100%;
+            height: auto;
+            max-width: 500px;
+            max-height: 500px;
+            margin: 0 auto;
+            border: 2px dashed #9333ea; /* Purple border for image mode */
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 200px; /* Ensure visibility */
+            overflow: hidden; /* To contain the image/canvas */
+        }
+        #image-output {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 0.8rem;
+        }
+        #image-output-canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 0.8rem;
         }
         
-        /* Adjust mouth size/position for smaller blobs */
-        #blobblebrain.shrunk-mode .mouth,
-        #blobblebrain.image-mode .mouth {
-            width: 25px;
-            bottom: 40px;
+        .loading-message {
+            color: #3b82f6;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: center;
+        }
+        .loading-message .spinner {
+            display: block;
         }
         
-        #response-text {
-            margin: 0;
-        }
     </style>
 </head>
 <body>
-    <div id="app">
+    <div id="app-container">
         
-        <!-- Exit Buttons (Top Right) -->
-        <button id="exit-research-mode" class="exit-button" style="display:none;">Exit Research Mode</button>
-        <button id="exit-image-mode" class="exit-button" style="display:none;">Exit Image Mode</button>
-        
-        <!-- BlobbleBrain -->
-        <div id="blobblebrain" style="top: 30%; left: 50%; background-color: rgb(0, 122, 255); box-shadow: rgba(0, 122, 255, 0.8) 0px 0px 25px, rgba(255, 255, 255, 0.6) 0px 0px 12px; width: 200px; height: 180px;" class="jiggling-center"> 
-            <div class="eyes">
-                <div class="eye"></div>
-                <div class="eye"></div>
-            </div>
+
+<div id="normal-blob" class="blob current-blob">
+            <div class="eye left-eye"></div>
+            <div class="eye right-eye"></div>
+            <div class="mouth"></div>
+        </div>
+        <div id="research-blob" class="blob hidden corner-blob">
+            <div class="eye left-eye"></div>
+            <div class="eye right-eye"></div>
+            <div class="mouth"></div>
+        </div>
+        <div id="image-blob" class="blob hidden corner-blob">
+            <div class="eye left-eye"></div>
+            <div class="eye right-eye"></div>
             <div class="mouth"></div>
         </div>
 
-        <!-- Response Bubble -->
-        <div id="response-bubble" style="top: 55%; left: 50%; transform: translateX(-50%); background-color: rgba(255, 255, 255, 0.05); box-shadow: 0px 8px 32px 0px rgba(0, 0, 0, 0.37); max-width: 600px; text-align: center;">
-            <p id="response-text">Hello! What's on your mind?</p>
-        </div>
         
-        <!-- Sources Area (Research Mode) -->
-        <div id="sources-area">
-        </div>
 
-        <!-- Image Display Area (Image Mode) -->
-        <div id="image-display-area">
-            <!-- Canvas/Image will be inserted here -->
-            <!-- Note: image-loading-text element will be replaced by the loading spinner or image content -->
-            <p id="image-loading-text">Describe the image you want to create!</p> 
-        </div>
+<div id="response-bubble">Hello! What's on your mind?</div>
+        
+        
 
-        <!-- Input Area (Bottom Center) -->
-        <div id="input-area">
-            <input type="text" id="user-input" placeholder="Ask a question..." autocomplete="off">
-            <button id="send-button" style="background-color: rgb(0, 122, 255);">Send</button>
+<div id="input-area">
+            <input type="text" id="user-input" placeholder="Ask a question..." />
+            <button id="send-button">Send</button>
+            <div id="loader" class="spinner"></div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const userInput = document.getElementById('user-input');
-            const sendButton = document.getElementById('send-button');
-            const responseText = document.getElementById('response-text');
-            const responseBubble = document.getElementById('response-bubble');
-            const blob = document.getElementById('blobblebrain');
-            const exitResearchButton = document.getElementById('exit-research-mode');
-            const exitImageButton = document.getElementById('exit-image-mode'); 
-            const sourcesArea = document.getElementById('sources-area');
-            const imageDisplayArea = document.getElementById('image-display-area'); 
-            let imageLoadingText = document.getElementById('image-loading-text'); // NOTE: This is declared as 'let' and may be overwritten
-            const inputArea = document.getElementById('input-area'); 
+        // --- Firebase Globals (Required but not used for this basic API demo) ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // RENAMED local constant to 'initialAuthToken' to avoid TDZ ReferenceError
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
+        // --- End Firebase Globals ---
 
-            // --- API KEY CONFIGURATION ---
-            const apiKey = "AIzaSyCGQAM_W9iytieFVQAwTXZf6sv5f2Ns5Q8"; 
+        // --- API Constants ---
+        const API_KEY = "AIzaSyCGQAM_W9iytieFVQAwTXZf6sv5f2Ns5Q8"; // Your API Key
+        const TEXT_MODEL = "gemini-2.5-flash-preview-09-2025"; // Stable for text
+        const IMAGE_MODEL = "gemini-2.5-flash-image-preview"; // FIX: Switched to a model available in this environment
 
-            // --- STATE & CONSTANTS ---
-            let currentMode = 'normal'; // 'normal', 'research', 'image'
-            const MAX_CHARS = 100;
-            let lastImagePrompt = ''; 
+        // --- UI Elements ---
+        const normalBlob = document.getElementById('normal-blob');
+        const researchBlob = document.getElementById('research-blob');
+        const imageBlob = document.getElementById('image-blob');
+        const responseBubble = document.getElementById('response-bubble');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const loader = document.getElementById('loader');
+        const inputArea = document.getElementById('input-area'); // Corrected variable definition
+        const appContainer = document.getElementById('app-container');
 
-            // Blob Size Constants
-            const FULL_BLOB_WIDTH = '200px';
-            const FULL_BLOB_HEIGHT = '180px';
-            const SHRUNK_BLOB_WIDTH = '120px';
-            const SHRUNK_BLOB_HEIGHT = '100px';
+        let currentMode = 'normal'; // 'normal', 'research', 'image'
+        let currentPrompt = ''; // Store the last prompt for image regeneration
 
-            // Text Model Configuration
-            const textModel = "gemini-2.5-flash-preview-09-2025";
-            const textApiUrl = apiKey
-                ? `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${apiKey}`
-                : `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent`;
+        // --- Event Listeners ---
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !sendButton.disabled) {
+                handleUserInput();
+            }
+        });
+        sendButton.addEventListener('click', handleUserInput);
 
-            // Image Model Configuration (using the recommended model)
-            const imageModel = "imagen-3.0-generate-002";
-            const imageApiUrl = apiKey 
-                ? `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:predict?key=${apiKey}`
-                : `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:predict`;
+        // --- Helper Functions ---
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        /**
+         * Generic API call with exponential backoff and retries.
+         * @param {string} url - The API endpoint URL.
+         * @param {object} options - Fetch options (method, headers, body).
+         * @param {number} maxRetries - Maximum number of retries.
+         * @param {string} mode - The current mode ('Normal', 'Research', 'Image') for status messages.
+         */
+        async function generateWithRetry(url, options, maxRetries = 3, mode = 'Normal') {
+            const tempOutputDiv = document.createElement('div'); // Create a temporary div for status updates
+            responseBubble.innerHTML = ''; // Clear bubble
+            responseBubble.appendChild(tempOutputDiv);
+
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    // Update status in the bubble
+                    if (mode === 'image') {
+                        tempOutputDiv.innerHTML = `<div class="loading-message"><div class="spinner"></div> Making your image come to life! (Attempt ${attempt + 1}/${maxRetries})</div>`;
+                    } else {
+                        // Thinking...
+                        tempOutputDiv.textContent = `Thinking... (Attempt ${attempt + 1}/${maxRetries})`; 
+                    }
+                    
+                    const response = await fetch(url, options);
+
+                    // Check for rate limits (429) or server errors (5xx) that warrant a retry
+                    if (response.status === 429 || response.status >= 500) {
+                        if (attempt < maxRetries - 1) {
+                            const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500; // Exponential backoff + jitter
+                            tempOutputDiv.textContent += ` Server error (${response.status}). Retrying in ${Math.round(delay / 1000)}s...`;
+                            await sleep(delay);
+                            continue; // Go to next attempt
+                        }
+                    }
+
+                    // For any non-retryable error (e.g., 400 Bad Request, 401 Unauthorized/API Key issue)
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        const message = errorData.error?.message || `HTTP Error ${response.status}: ${response.statusText}`;
+                        throw new Error(message);
+                    }
+
+                    // Success
+                    return await response.json();
+
+                } catch (error) {
+                    // Catch network errors (like DNS lookup failure, timeout, etc.)
+                    if (attempt < maxRetries - 1) {
+                        const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+                        tempOutputDiv.textContent = `Network/API error. Retrying in ${Math.round(delay / 1000)}s...`;
+                        await sleep(delay);
+                        console.error(`Attempt ${attempt + 1} failed:`, error.message);
+                        continue;
+                    }
+                    throw error; // Re-throw the error if all retries fail
+                }
+            }
+            throw new Error("API request failed after all retries.");
+        }
+
+
+        /**
+         * Switches the active blob and updates UI for the given mode.
+         * @param {string} mode - 'normal', 'research', 'image'
+         */
+        function updateUIForMode(mode) {
+            currentMode = mode;
+            const allBlobs = [normalBlob, researchBlob, imageBlob];
+            const currentBlobElement = document.getElementById(`${mode}-blob`);
+
+            allBlobs.forEach(blob => {
+                blob.classList.add('hidden');
+                blob.classList.remove('current-blob', 'corner-blob'); // Clean up classes
+            });
             
-            // --- Utility Functions ---
+            currentBlobElement.classList.remove('hidden');
+            currentBlobElement.classList.add('current-blob');
 
-            /**
-             * Exponential Backoff Retry mechanism for API calls.
-             */
-            async function fetchWithRetry(url, options, maxRetries = 5) {
-                let lastError = null;
-                for (let i = 0; i < maxRetries; i++) {
-                    try {
-                        const response = await fetch(url, options);
-                        
-                        if (!response.ok && response.status !== 429) {
-                            // Throw an error for non-429 HTTP errors (like 500 or real 403)
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        if (response.status === 429) {
-                             throw new Error(`Rate limit exceeded (429)`);
-                        }
-                        return response;
-                    } catch (error) {
-                        lastError = error;
-                        const delay = Math.pow(2, i) * 1000;
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                    }
-                }
-                throw new Error(`Failed to fetch after ${maxRetries} attempts: ${lastError.message}`);
+            // Adjust input area position based on mode
+            if (mode === 'normal') {
+                responseBubble.style.top = '45%';
+                responseBubble.style.left = '50%';
+                responseBubble.style.transform = 'translate(-50%, -50%)';
+                responseBubble.style.maxWidth = '600px';
+
+                inputArea.style.bottom = '30px';
+                inputArea.style.left = '50%';
+                inputArea.style.transform = 'translateX(-50%)';
+                inputArea.style.width = '90%';
+            } else {
+                responseBubble.style.top = '50%';
+                responseBubble.style.left = '50%';
+                responseBubble.style.transform = 'translate(-50%, -50%)';
+                responseBubble.style.maxWidth = 'calc(100% - 300px)'; // Make room for corner blobs
+                
+                inputArea.style.bottom = '30px';
+                inputArea.style.right = '30px';
+                inputArea.style.left = 'auto'; // Disable left positioning
+                inputArea.style.transform = 'none'; // Disable transform
+                inputArea.style.width = 'calc(100% - 300px)'; // Make room for corner blobs
             }
-
-            /**
-             * Fallback error function for image generation (used only if a real network/API error occurs).
-             * Renders a custom canvas with the error message.
-             */
-            function generateErrorImage(prompt) {
-                imageDisplayArea.innerHTML = ''; // Clear existing content
-                
-                // Use smaller fixed sizes for safety to ensure it fits the viewport
-                const width = 600; 
-                const height = 400; 
-                
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                canvas.style.maxWidth = '100%';
-                canvas.style.maxHeight = '100%';
-                canvas.style.borderRadius = '15px';
-                
-                const ctx = canvas.getContext('2d');
-
-                ctx.fillStyle = '#1a1a1a'; // Dark background
-                ctx.fillRect(0, 0, width, height);
-                const centerX = width / 2;
-                const centerY = height / 2;
-                
-                // Draw a simple error 'X'
-                ctx.strokeStyle = '#D32F2F'; // Red color
-                ctx.lineWidth = 10;
-                ctx.beginPath();
-                ctx.moveTo(centerX - 40, centerY - 40);
-                ctx.lineTo(centerX + 40, centerY + 40);
-                ctx.moveTo(centerX + 40, centerY - 40);
-                ctx.lineTo(centerX - 40, centerY + 40);
-                ctx.stroke();
-
-                // Error Header
-                ctx.fillStyle = '#D32F2F';
-                ctx.font = '24px sans-serif'; 
-                ctx.textAlign = 'center';
-                ctx.fillText('API KEY/NETWORK FAILURE', centerX, 60);
-
-                // Prompt Text
-                ctx.fillStyle = '#ccc';
-                ctx.font = '16px sans-serif';
-                ctx.textAlign = 'center';
-                const errorText = `Failed to generate image for: "${prompt}"`;
-                ctx.fillText(errorText, centerX, height - 30);
-
-                imageDisplayArea.appendChild(canvas);
-                
-                // Re-add the loading text element placeholder for consistency
-                if (!imageLoadingText || !document.body.contains(imageLoadingText)) {
-                     imageLoadingText = document.createElement('p');
-                     imageLoadingText.id = 'image-loading-text';
-                     imageDisplayArea.appendChild(imageLoadingText);
-                }
-                imageLoadingText.textContent = `Image generation failed. Check your API key or network connection.`;
-                imageLoadingText.style.display = 'block';
+            
+            // Adjust corner blob positions
+            if (mode === 'research') {
+                normalBlob.classList.remove('hidden');
+                normalBlob.classList.add('corner-blob');
+                normalBlob.style.top = '50px'; /* Top Right Corner */
+                normalBlob.style.left = 'calc(100% - 150px)';
+                normalBlob.style.transform = 'none';
+            } else if (mode === 'image') {
+                normalBlob.classList.remove('hidden');
+                normalBlob.classList.add('corner-blob');
+                normalBlob.style.top = '50px'; /* Top Left Corner */
+                normalBlob.style.left = '100px';
+                normalBlob.style.transform = 'none';
             }
+        }
 
 
-            /**
-             * Checks for overlap between the Research Blob and the Response Bubble 
-             * and adjusts the blob's size accordingly.
-             */
-            function checkCollisionAndResize() {
-                if (currentMode !== 'research') return;
+        /**
+         * Main handler for user input. Determines mode and calls appropriate API function.
+         */
+        async function handleUserInput() {
+            const prompt = userInput.value.trim();
+            if (!prompt) return;
 
-                setTimeout(() => {
-                    const blobRect = blob.getBoundingClientRect();
-                    const responseRect = responseBubble.getBoundingClientRect();
+            sendButton.disabled = true;
+            loader.style.display = 'block';
+            userInput.value = ''; // Clear input
 
-                    const isOverlapping = responseRect.top < (blobRect.bottom + 20);
+            responseBubble.innerHTML = ''; // Clear previous response
 
-                    if (isOverlapping) {
-                        blob.style.width = SHRUNK_BLOB_WIDTH;
-                        blob.style.height = SHRUNK_BLOB_HEIGHT;
-                        blob.classList.add('shrunk-mode');
-                    } else {
-                        blob.style.width = FULL_BLOB_WIDTH;
-                        blob.style.height = FULL_BLOB_HEIGHT;
-                        blob.classList.remove('shrunk-mode');
-                    }
-                }, 50); 
+            let newMode = currentMode;
+            if (prompt.toLowerCase().includes('research') && currentMode !== 'research') {
+                newMode = 'research';
+            } else if ((prompt.toLowerCase().includes('generate an image') || prompt.toLowerCase().includes('create an image')) && currentMode !== 'image') {
+                newMode = 'image';
+                currentPrompt = prompt.replace(/generate an image of|create an image of/i, '').trim(); // Extract image prompt
+            } else if (currentMode !== 'normal' && !prompt.toLowerCase().includes('research') && !prompt.toLowerCase().includes('image')) {
+                newMode = 'normal';
             }
+            
+            updateUIForMode(newMode);
 
-            // --- UI Update Functions ---
-            function updateUIForMode() {
-                // Hide all exit buttons and special areas first
-                exitResearchButton.style.display = 'none';
-                exitImageButton.style.display = 'none';
-                sourcesArea.style.display = 'none';
-                responseBubble.style.display = 'block'; 
-                imageDisplayArea.style.display = 'none';
-                
-                // Clear any dynamic image/canvas content
-                imageDisplayArea.innerHTML = ''; 
-                
-                // Re-create and re-cache the instruction text element (safer than relying on old references)
-                imageLoadingText = document.createElement('p');
-                imageLoadingText.id = 'image-loading-text';
-                imageDisplayArea.appendChild(imageLoadingText);
-
-                // Reset common blob attributes
-                blob.classList.remove('image-mode', 'shrunk-mode'); 
-                blob.classList.remove('jiggling-center', 'jiggling-corner'); 
-                blob.style.transform = ''; 
-
-                if (currentMode === 'research') {
-                    // --- RESEARCH MODE (RED) ---
-                    // ... (Research mode UI setup - remains unchanged)
-                    
-                    // Blob Style 
-                    blob.style.backgroundColor = '#FF4500'; 
-                    blob.style.boxShadow = '0 0 20px #FF4500, inset 0 0 10px rgba(255, 255, 255, 0.5)';
-                    blob.style.top = '20px'; 
-                    blob.style.left = '50%';
-                    blob.style.right = 'auto'; 
-                    blob.style.bottom = 'auto'; 
-                    blob.style.marginTop = '0'; 
-                    blob.style.marginLeft = '0'; 
-                    blob.style.width = FULL_BLOB_WIDTH;
-                    blob.style.height = FULL_BLOB_HEIGHT;
-                    blob.classList.add('jiggling-center');
-                    blob.classList.remove('jiggling-corner');
-                    
-                    // Button Style
-                    sendButton.style.backgroundColor = '#FF4500';
-                    sendButton.onmouseover = () => { sendButton.style.backgroundColor = '#CC3700'; };
-                    sendButton.onmouseout = () => { if (!sendButton.disabled) sendButton.style.backgroundColor = '#FF4500'; };
-                    exitResearchButton.style.display = 'block'; 
-
-                    // Response Box 
-                    responseBubble.style.top = '50%';
-                    responseBubble.style.left = '50%';
-                    responseBubble.style.right = 'auto'; 
-                    responseBubble.style.bottom = 'auto'; 
-                    responseBubble.style.marginTop = '0'; 
-                    responseBubble.style.marginLeft = '0';
-                    responseBubble.style.transform = 'translate(-50%, -50%)';
-                    responseBubble.style.width = '80%';
-                    responseBubble.style.maxWidth = '900px';
-                    responseBubble.style.minHeight = '200px';
-                    responseBubble.style.textAlign = 'left'; 
-                    responseBubble.style.backgroundColor = '#333';
-                    responseBubble.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5), 0 0 5px rgba(255, 255, 255, 0.1)';
-                    
-                    // Input Area 
-                    inputArea.style.bottom = '20px';
-                    inputArea.style.right = '20px';
-                    inputArea.style.left = 'auto';
-                    inputArea.style.transform = 'none';
-                    inputArea.style.width = '350px';
-                    inputArea.style.maxWidth = '350px';
-                    inputArea.style.marginLeft = '0'; 
-                    inputArea.style.top = 'auto'; 
-                    
-                    checkCollisionAndResize();
-                    
-                    // Set initial text
-                    responseText.textContent = 'Research Mode is ON. I will give detailed, factual answers with sources.';
-
-                } else if (currentMode === 'image') {
-                    // --- IMAGE GENERATION MODE (PURPLE) ---
-                    
-                    // Blob Style 
-                    blob.style.backgroundColor = '#8A2BE2'; 
-                    blob.style.boxShadow = '0 0 20px #8A2BE2, inset 0 0 8px rgba(255, 255, 255, 0.4)';
-                    blob.style.top = '10px'; 
-                    blob.style.left = '10px';
-                    blob.style.width = SHRUNK_BLOB_WIDTH; // Smaller blob
-                    blob.style.height = SHRUNK_BLOB_HEIGHT;
-                    blob.style.right = 'auto'; 
-                    blob.style.bottom = 'auto'; 
-                    blob.style.marginTop = '0'; 
-                    blob.style.marginLeft = '0'; 
-                    blob.style.transform = 'none'; 
-                    blob.classList.add('image-mode'); 
-                    blob.classList.remove('jiggling-center');
-                    blob.classList.add('jiggling-corner');
-
-                    // Hide response bubble
-                    responseBubble.style.display = 'none';
-                    
-                    // Button Style
-                    sendButton.style.backgroundColor = '#8A2BE2';
-                    sendButton.onmouseover = () => { sendButton.style.backgroundColor = '#6A1BA0'; };
-                    sendButton.onmouseout = () => { if (!sendButton.disabled) sendButton.style.backgroundColor = '#8A2BE2'; };
-                    exitImageButton.style.display = 'block'; 
-
-                    // Image Display Area (Centered)
-                    imageDisplayArea.style.display = 'flex'; 
-                    
-                    // Display current state/instructions (re-uses imageLoadingText element)
-                    if (lastImagePrompt) {
-                        imageLoadingText.textContent = `Current image: "${lastImagePrompt}". Type a new prompt or "regenerate"!`;
-                    } else {
-                         imageLoadingText.textContent = 'Describe the image you want to create!';
-                    }
-                    imageLoadingText.style.display = 'block'; // Ensure the instructions are visible
-                    
-                    // Input Area (Bottom Right)
-                    inputArea.style.bottom = '20px';
-                    inputArea.style.right = '20px';
-                    inputArea.style.left = 'auto';
-                    inputArea.style.transform = 'none';
-                    inputArea.style.width = '350px';
-                    inputArea.style.maxWidth = '350px';
-                    inputArea.style.marginLeft = '0'; 
-                    inputArea.style.top = 'auto'; 
-
+            try {
+                if (newMode === 'image') {
+                    await getGeneratedImage(currentPrompt);
                 } else {
-                    // --- NORMAL MODE (CLEAN BLUE) ---
-                    // ... (Normal mode UI setup - remains unchanged)
-                    
-                    // 1. Blob Style
-                    blob.style.backgroundColor = '#007AFF'; 
-                    blob.style.boxShadow = '0 0 25px rgba(0, 122, 255, 0.8), inset 0 0 12px rgba(255, 255, 255, 0.6)';
-                    blob.style.top = '30%'; 
-                    blob.style.left = '50%'; 
-                    blob.style.right = 'auto'; 
-                    blob.style.bottom = 'auto'; 
-                    blob.style.marginTop = '0'; 
-                    blob.style.marginLeft = '0'; 
-                    blob.style.width = FULL_BLOB_WIDTH;
-                    blob.style.height = FULL_BLOB_HEIGHT;
-                    blob.classList.add('jiggling-center');
-                    blob.classList.remove('jiggling-corner');
-
-
-                    // 2. Response Box
-                    responseBubble.style.display = 'block';
-                    responseBubble.style.top = '55%'; 
-                    responseBubble.style.left = '50%'; 
-                    responseBubble.style.right = 'auto'; 
-                    responseBubble.style.bottom = 'auto'; 
-                    responseBubble.style.marginTop = '0'; 
-                    responseBubble.style.marginLeft = '0'; 
-                    responseBubble.style.transform = 'translateX(-50%)'; 
-                    responseBubble.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                    responseBubble.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.37)'; 
-                    responseBubble.style.width = 'auto';
-                    responseBubble.style.maxWidth = '600px'; 
-                    responseBubble.style.minHeight = '0';
-                    responseBubble.style.textAlign = 'center';
-                    
-                    // 3. Input Area
-                    inputArea.style.top = 'auto'; 
-                    inputArea.style.bottom = '20px'; 
-                    inputArea.style.right = 'auto'; 
-                    inputArea.style.left = '50%'; 
-                    inputArea.style.marginLeft = '0'; 
-                    inputArea.style.transform = 'translateX(-50%)'; 
-                    inputArea.style.width = '90%';
-                    inputArea.style.maxWidth = '700px'; 
-                    
-                    // Button Style
-                    sendButton.style.backgroundColor = '#007AFF';
-                    sendButton.onmouseover = () => { sendButton.style.backgroundColor = '#0056b3'; };
-                    sendButton.onmouseout = () => { if (!sendButton.disabled) sendButton.style.backgroundColor = '#007AFF'; };
-                    
-                    responseText.textContent = 'Hello! What\'s on your mind?';
+                    await getAIResponse(prompt, newMode);
                 }
+            } catch (error) {
+                console.error("API call failed:", error);
+                // Display the specific error message from generateWithRetry
+                responseBubble.innerHTML = `<div style="color:red; font-weight:bold;">Error: ${error.message}</div>`;
+            } finally {
+                sendButton.disabled = false;
+                loader.style.display = 'none';
             }
+        }
+
+
+        /**
+         * Handles fetching AI responses for normal and research modes.
+         */
+        async function getAIResponse(prompt, mode) {
+            const isResearch = mode === 'research';
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${TEXT_MODEL}:generateContent?key=${API_KEY}`;
             
-            // Function to manually switch back to Normal Mode
-            const exitMode = () => {
-                currentMode = 'normal';
-                updateUIForMode();
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                tools: isResearch ? [{ google_search: {} }] : undefined,
+                systemInstruction: {
+                    parts: [{ text: isResearch 
+                        ? "You are a research assistant. Provide factual answers based on search results."
+                        : "You are a general-purpose AI. Be helpful and concise." 
+                    }]
+                }
             };
 
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+
+            try {
+                const result = await generateWithRetry(apiUrl, options, 3, mode);
             
-            // --- Function to call the Gemini API for text ---
-            const getAIResponse = async (prompt) => {
-                const researchRegex = /\bresearch\b/i;
-                const imageRegex = /\b(make|create|generate)\s+(an\s+)?image\b/i; 
-                
-                const previousMode = currentMode;
-                
-                if (imageRegex.test(prompt)) {
-                    currentMode = 'image';
-                } else if (researchRegex.test(prompt)) {
-                    currentMode = 'research';
-                } else {
-                    currentMode = 'normal';
-                }
-                
-                if (previousMode !== currentMode) {
-                    updateUIForMode(); 
-                }
+                const candidate = result.candidates?.[0];
 
-                sendButton.disabled = true;
-                sourcesArea.innerHTML = ''; 
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    let generatedText = candidate.content.parts[0].text;
+                    let sourcesText = "";
 
-                if (currentMode === 'image') {
-                    const cleanPrompt = userInput.value.trim().toLowerCase();
-                    if (cleanPrompt.includes('regenerate')) { 
-                        if (lastImagePrompt) {
-                            getGeneratedImage(lastImagePrompt, true); 
-                        } else {
-                            imageLoadingText.textContent = "Please provide an image prompt first before trying to regenerate!";
-                            sendButton.disabled = false;
-                            userInput.value = '';
-                        }
-                    } else {
-                        lastImagePrompt = prompt.replace(imageRegex, '').trim(); 
-                        getGeneratedImage(lastImagePrompt); 
-                    }
-                    return; 
-                }
+                    // CLEANUP STEP: Remove common Markdown characters * and #
+                    generatedText = generatedText.replace(/(\*\*|\*|##|#)/g, ''); 
 
-                let systemInstruction;
-                let tools = undefined;
-                
-                if (currentMode === 'research') {
-                    systemInstruction = 'You are a professional research assistant. Provide detailed, factual, and comprehensive responses to the user\'s queries based on the provided search results. Do not use conversational fillers or exceed 2000 characters. Crucially, do not use any markdown formatting symbols, such as hashtags (#) or asterisks (*), in your response.';
-                    tools = [{ "google_search": {} }]; 
-                    responseText.textContent = `...searching the web in Research Mode...`;
-                } else { // Normal Mode
-                    systemInstruction = 'You are BlobbleBrain, a playful AI module designed for fun, silly, and concise responses. Your absolute limit is 100 characters, including spaces and punctuation. You must always stay within this limit and be entertaining.';
-                    responseText.textContent = `...blobbling...`;
-                }
-                
-                const payload = {
-                    contents: [{ parts: [{ text: prompt }] }],
-                    systemInstruction: {
-                        parts: [{ text: systemInstruction }]
-                    },
-                    tools: tools 
-                };
-
-                try {
-                    const response = await fetchWithRetry(textApiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    const result = await response.json();
-                    
-                    const candidate = result.candidates?.[0];
-                    let aiText = "Oops! I lost my train of thought. Try asking something else!"; 
-                    
-                    if (candidate && candidate.content?.parts?.[0]?.text) {
-                        aiText = candidate.content.parts[0].text;
-                    }
-
-                    // Extract sources if available
-                    let sources = [];
-                    const groundingMetadata = candidate.groundingMetadata;
-                    if (currentMode === 'research' && groundingMetadata && groundingMetadata.groundingAttributions) {
-                         sources = groundingMetadata.groundingAttributions
-                            .map(attribution => ({
-                                uri: attribution.web?.uri,
-                                title: attribution.web?.title,
-                            }))
-                            .filter(source => source.uri && source.title); 
+                    // Extract and format citations for research mode
+                    if (isResearch) {
+                        const groundingMetadata = candidate.groundingMetadata;
+                        if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                            const sources = groundingMetadata.groundingAttributions
+                                .map(attr => ({ uri: attr.web?.uri, title: attr.web?.title }))
+                                .filter(source => source.uri && source.title);
                             
-                        if (sources.length > 0) {
-                            sourcesArea.innerHTML = '<strong>Sources:</strong><ul>' + sources.map(s => 
-                                `<li><a href="${s.uri}" target="_blank" style="color: lightblue; text-decoration: none;">${s.title}</a></li>`
-                            ).join('') + '</ul>';
-                            sourcesArea.style.display = 'block';
-                            sourcesArea.style.top = `${responseBubble.offsetTop + responseBubble.offsetHeight + 20}px`;
-                            sourcesArea.style.left = `${responseBubble.offsetLeft}px`;
-                        } else {
-                            sourcesArea.style.display = 'none';
+                            if (sources.length > 0) {
+                                sourcesText = "\n\n--- Sources ---\n";
+                                sources.forEach((s, index) => {
+                                    sourcesText += `${index + 1}. [${s.title}](${s.uri})\n`;
+                                });
+                            }
                         }
                     }
-                    
-                    const finalResponse = currentMode === 'research' ? aiText : aiText.substring(0, MAX_CHARS);
-                    responseText.textContent = finalResponse;
-                    
-                } catch (error) {
-                    // Generic error handling now that the mock force is removed
-                    responseText.textContent = `Connection Error: I couldn't reach the API. Please check your network and ensure your API key is correct. Error: ${error.message}`;
-                } finally {
-                    sendButton.disabled = false;
-                    userInput.value = '';
-                    if (currentMode === 'research') {
-                         checkCollisionAndResize();
-                    }
+                    // Use innerHTML and pre tag. CSS handles the specific formatting.
+                    responseBubble.innerHTML = `<pre>${generatedText + sourcesText}</pre>`;
+                } else {
+                    responseBubble.textContent = `Error: Empty or malformed response from ${mode} API.`;
                 }
-            };
+            } catch (error) {
+                // generateWithRetry already updated the bubble, just re-throw to stop
+                throw error; 
+            }
+        }
 
-            // --- Function for Image Generation ---
-            const getGeneratedImage = async (imagePrompt, isRegenerate = false) => {
-                if (imagePrompt.length === 0) {
-                    imageLoadingText.textContent = "Please provide an actual description to generate an image.";
-                    sendButton.disabled = false;
-                    userInput.value = '';
-                    return;
-                }
-                
-                // UI updates for generating
-                sendButton.disabled = true;
-                
-                // --- UPDATED LOADING MESSAGE ---
-                imageDisplayArea.innerHTML = '<div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);" class="text-center p-12"><div class="animate-spin rounded-full h-12 w-12 border-b-4 border-indigo-500 mx-auto"></div><p class="mt-4 text-white">Making your image come to life!</p></div>';
-
-
-                try {
-                    const payload = {
-                        instances: [{ prompt: imagePrompt }],
-                        parameters: { "sampleCount": 1 }
-                    };
-
-                    const response = await fetchWithRetry(imageApiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    const result = await response.json();
-                    
-                    let base64Data = null;
-                    if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-                        base64Data = result.predictions[0].bytesBase64Encoded;
-                    }
-                    
-                    if (base64Data) {
-                        const imageUrl = `data:image/png;base64,${base64Data}`;
-                        
-                        const img = document.createElement('img');
-                        img.src = imageUrl;
-                        img.alt = imagePrompt;
-                        
-                        imageDisplayArea.innerHTML = '';
-                        imageDisplayArea.appendChild(img);
-                        
-                        // Re-add the loading text element placeholder for consistency
-                        if (!imageLoadingText || !document.body.contains(imageLoadingText)) {
-                             imageLoadingText = document.createElement('p');
-                             imageLoadingText.id = 'image-loading-text';
-                             imageDisplayArea.appendChild(imageLoadingText);
-                        }
-                        imageLoadingText.textContent = `Current image: "${imagePrompt}". Type a new prompt or "regenerate"!`;
-                        imageLoadingText.style.display = 'block';
-
-                    } else {
-                         throw new Error("No image data or invalid response received from API.");
-                    }
-
-                } catch (error) {
-                    // Fallback to error image if generation fails
-                    generateErrorImage(imagePrompt);
-                } finally {
-                    sendButton.disabled = false;
-                    userInput.value = '';
-                }
-            };
-
-
-            // --- EVENT LISTENERS ---
-            exitResearchButton.addEventListener('click', exitMode);
-            exitImageButton.addEventListener('click', exitMode); 
-
-            // Send button click
-            sendButton.addEventListener('click', () => {
-                const prompt = userInput.value.trim();
-                if (prompt) {
-                    getAIResponse(prompt);
-                }
-            });
-
-            // Enter key press
-            userInput.addEventListener('keypress', (event) => {
-                if (event.key === 'Enter' && !sendButton.disabled) {
-                    const prompt = userInput.value.trim();
-                    if (prompt) {
-                        getAIResponse(prompt);
-                    }
-                }
-            });
+        /**
+         * Handles fetching generated images for image mode.
+         */
+        async function getGeneratedImage(prompt) {
+            // FIX: Changed URL construction for gemini-2.5-flash-image-preview
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL}:generateContent?key=${API_KEY}`;
             
-            // Listen to window resize events to update the blob size if the response bubble size changes
-            window.addEventListener('resize', () => {
-                 if (currentMode === 'research') {
-                    checkCollisionAndResize();
-                 }
-            });
+            // FIX: Changed payload structure for gemini-2.5-flash-image-preview
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseModalities: ['IMAGE']
+                },
+            };
 
-            // Initial setup call 
-            updateUIForMode();
+
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+
+            try {
+                const result = await generateWithRetry(apiUrl, options, 3, 'image');
+
+                // FIX: Adjusted response parsing for gemini-2.5-flash-image-preview
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+
+                if (base64Data) {
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    
+                    responseBubble.innerHTML = `
+                        <div id="image-output-container">
+                            <p class="mb-2 text-sm text-gray-400">Prompt: "${prompt}"</p>
+                            <img id="image-output" src="${imageUrl}" alt="Generated Image by BlobbleBrain">
+                        </div>
+                    `;
+                } else {
+                    responseBubble.innerHTML = `<div style="color:red; font-weight:bold;">Image API did not return valid image data. Try a different prompt.</div>`;
+                }
+            } catch (error) {
+                // If generateWithRetry throws, it already updated the bubble
+                throw error; 
+            }
+        }
+
+        // Initialize UI on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUIForMode('normal'); // Default to normal mode
         });
     </script>
 </body>
