@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlobbleBrain Multi-Mode AI Client</title>
+    <title>Blobble AI</title>
     
     <style>
         /* CSS STYLING */
@@ -582,20 +582,21 @@
                 for (let i = 0; i < retries; i++) {
                     try {
                         const response = await fetch(url, options);
+                        
+                        // Handle rate limiting with backoff
                         if (response.status === 429 && i < retries - 1) {
                             const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
                             await new Promise(resolve => setTimeout(resolve, delay));
                             continue;
                         }
+
                         if (!response.ok) {
-                            // Check for 401 specifically
-                            if (response.status === 401) {
-                                throw new Error("Authentication failed (401). Ensure API key is correct or environment is properly configured.");
+                            // *** CRITICAL ERROR LOGGING FOR DEBUGGING ***
+                            if (response.status === 401 || response.status === 403) {
+                                console.error(`[FATAL API ERROR ${response.status}] Authentication Failure. The API key might be missing, invalid, or lacking permission for the requested model (${url.split('/').pop().split('?')[0]}).`);
                             }
-                            // Crucial check: re-throw 403 error for image generation if the workaround fails
-                            if (response.status === 403 && url.includes("gemini-2.5-flash-image-preview")) {
-                                throw new Error("Authentication failed (403). The image generation service may not be enabled for your account or environment.");
-                            }
+                            // *** END CRITICAL LOGGING ***
+                            
                             throw new Error("HTTP error! status: " + response.status);
                         }
                         return response.json();
@@ -695,6 +696,7 @@
                     
                 } catch (error) {
                     console.error("Gemini API Error:", error);
+                    // This is the user-facing message
                     responseText.textContent = "Oops! My connection noodle broke. Try again in a minute!";
                 } finally {
                     sendButton.disabled = false;
@@ -724,7 +726,7 @@
                 imageLoadingText.style.display = 'block';
                 
                 try {
-                    // *** NEW PAYLOAD FOR gemini-2.5-flash-image-preview (generateContent endpoint) ***
+                    // *** PAYLOAD FOR gemini-2.5-flash-image-preview (generateContent endpoint) ***
                     const payload = {
                         contents: [{
                             parts: [{ text: imagePrompt }]
@@ -733,21 +735,20 @@
                             responseModalities: ['TEXT', 'IMAGE']
                         },
                     };
-                    // *** END NEW PAYLOAD ***
+                    // *** END PAYLOAD ***
 
-                    // Uses the new imageApiUrl constant (now pointing to gemini-2.5-flash-image-preview:generateContent)
                     const result = await fetchWithRetry(imageApiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
 
-                    // *** NEW RESPONSE PARSING FOR gemini-2.5-flash-image-preview ***
+                    // *** RESPONSE PARSING FOR gemini-2.5-flash-image-preview ***
                     const candidate = result.candidates?.[0];
                     // Look for the part that contains inline image data
                     const imagePart = candidate?.content?.parts?.find(p => p.inlineData && p.inlineData.mimeType.startsWith('image/'));
                     let base64Data = imagePart?.inlineData?.data || null;
-                    // *** END NEW RESPONSE PARSING ***
+                    // *** END RESPONSE PARSING ***
 
                     if (base64Data) {
                         generatedImage.src = `data:image/png;base64,${base64Data}`;
