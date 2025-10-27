@@ -291,10 +291,11 @@
 <body>
     <div id="app">
         
-
-<button id="exit-research-mode" class="exit-button" style="display:none;">Exit Research Mode</button>
+        <!-- Exit Buttons (Top Right) -->
+        <button id="exit-research-mode" class="exit-button" style="display:none;">Exit Research Mode</button>
         <button id="exit-image-mode" class="exit-button" style="display:none;">Exit Image Mode</button>
         
+        <!-- BlobbleBrain -->
         <div id="blobblebrain" style="top: 30%; left: 50%; background-color: rgb(0, 122, 255); box-shadow: rgba(0, 122, 255, 0.8) 0px 0px 25px, rgba(255, 255, 255, 0.6) 0px 0px 12px; width: 200px; height: 180px;" class="jiggling-center"> 
             <div class="eyes">
                 <div class="eye"></div>
@@ -303,22 +304,22 @@
             <div class="mouth"></div>
         </div>
 
+        <!-- Response Bubble -->
         <div id="response-bubble" style="top: 55%; left: 50%; transform: translateX(-50%); background-color: rgba(255, 255, 255, 0.05); box-shadow: 0px 8px 32px 0px rgba(0, 0, 0, 0.37); max-width: 600px; text-align: center;">
             <p id="response-text">Hello! What's on your mind?</p>
         </div>
         
-        
-
-<div id="sources-area">
+        <!-- Sources Area (Research Mode) -->
+        <div id="sources-area">
         </div>
 
-        
-
-<div id="image-display-area">
+        <!-- Image Display Area (Image Mode) -->
+        <div id="image-display-area">
             <!-- Canvas/Image will be inserted here -->
             <p id="image-loading-text">Describe the image you want to create!</p>
         </div>
 
+        <!-- Input Area (Bottom Center) -->
         <div id="input-area">
             <input type="text" id="user-input" placeholder="Ask a question..." autocomplete="off">
             <button id="send-button" style="background-color: rgb(0, 122, 255);">Send</button>
@@ -343,13 +344,18 @@
             let currentMode = 'normal'; // 'normal', 'research', 'image'
             const MAX_CHARS = 100;
             const apiKey = ""; 
-            let lastImagePrompt = ''; // Store the last valid image prompt
+            let lastImagePrompt = ''; 
 
             // Blob Size Constants
             const FULL_BLOB_WIDTH = '200px';
             const FULL_BLOB_HEIGHT = '180px';
             const SHRUNK_BLOB_WIDTH = '120px';
             const SHRUNK_BLOB_HEIGHT = '100px';
+
+            // Mock Text provided by user
+            const MOCK_NORMAL = 'CONNECTION FAILED (Network Block): Oopsie! My network cable is unplugged. The answer is 42 and your hat looks amazing!';
+            const MOCK_RESEARCH = 'RESEARCH FAILED (Network Block): System overload detected! I can\'t reach the real web, but here\'s a mock answer: The largest known star is UY Scuti, and water boils at 100°C.';
+
 
             // Text Model Configuration
             const textModel = "gemini-2.5-flash-preview-09-2025";
@@ -367,7 +373,6 @@
 
             /**
              * Exponential Backoff Retry mechanism for API calls.
-             * Returns the raw Response object to allow checking the status (e.g., 403).
              */
             async function fetchWithRetry(url, options, maxRetries = 5) {
                 let lastError = null;
@@ -382,7 +387,6 @@
                             // Throw an error for non-403, non-429 HTTP errors (like 500)
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
-                        // For OK responses and 429 (which we will handle by retrying below), return the response.
                         if (response.status === 429) {
                              throw new Error(`Rate limit exceeded (429)`);
                         }
@@ -390,7 +394,6 @@
                     } catch (error) {
                         lastError = error;
                         const delay = Math.pow(2, i) * 1000;
-                        console.warn(`Request failed (${error.message}). Retrying in ${delay / 1000}s...`);
                         await new Promise(resolve => setTimeout(resolve, delay));
                     }
                 }
@@ -441,13 +444,13 @@
                 ctx.lineTo(centerX - 50, centerY + 50);
                 ctx.stroke();
 
-                // Add the Mock Message
+                // Add the Mock Message (User requested text)
                 ctx.fillStyle = '#D32F2F';
-                ctx.font = '30px sans-serif'; // Using sans-serif as 'Inter' isn't guaranteed here
+                ctx.font = '30px sans-serif'; 
                 ctx.textAlign = 'center';
                 ctx.fillText('NETWORK BLOCK: MOCK IMAGE GENERATED', centerX, 50);
 
-                // Add the prompt text
+                // Add the prompt text (User requested text format)
                 ctx.fillStyle = '#424242';
                 ctx.font = 'italic 20px sans-serif';
                 ctx.textAlign = 'center';
@@ -458,7 +461,6 @@
                 let currentLine = '';
                 mockPrompt.split(' ').forEach(word => {
                     const testLine = currentLine + word + ' ';
-                    // Measure text logic is simplified, assumes a rough max width
                     if (ctx.measureText(testLine).width > width - 100 && currentLine !== '') {
                         textLines.push(currentLine.trim());
                         currentLine = word + ' ';
@@ -484,36 +486,26 @@
             /**
              * Checks for overlap between the Research Blob and the Response Bubble 
              * and adjusts the blob's size accordingly.
-             * This only runs in Research Mode.
              */
             function checkCollisionAndResize() {
                 if (currentMode !== 'research') return;
 
-                // We need to wait for the browser to calculate the dimensions 
-                // after setting the research mode CSS.
                 setTimeout(() => {
                     const blobRect = blob.getBoundingClientRect();
                     const responseRect = responseBubble.getBoundingClientRect();
 
-                    // Check for vertical overlap: is the top of the response bubble 
-                    // higher than the bottom of the blob?
-                    // We add a small buffer (20px) to prevent flicker.
                     const isOverlapping = responseRect.top < (blobRect.bottom + 20);
 
                     if (isOverlapping) {
-                        // Shrink the blob
                         blob.style.width = SHRUNK_BLOB_WIDTH;
                         blob.style.height = SHRUNK_BLOB_HEIGHT;
-                        // Add shrunk-mode class to adjust face features
                         blob.classList.add('shrunk-mode');
                     } else {
-                        // Return to full size
                         blob.style.width = FULL_BLOB_WIDTH;
                         blob.style.height = FULL_BLOB_HEIGHT;
-                        // Remove shrunk-mode class
                         blob.classList.remove('shrunk-mode');
                     }
-                }, 50); // Small delay to ensure layout rendering is complete
+                }, 50); 
             }
 
             // --- UI Update Functions ---
@@ -531,7 +523,7 @@
                 imageDisplayArea.appendChild(imageLoadingText);
                 
                 // Reset common blob attributes
-                blob.classList.remove('image-mode', 'shrunk-mode'); // Clear all size/face modifiers
+                blob.classList.remove('image-mode', 'shrunk-mode'); 
                 blob.classList.remove('jiggling-center', 'jiggling-corner'); 
                 blob.style.transform = ''; 
 
@@ -547,10 +539,8 @@
                     blob.style.bottom = 'auto'; 
                     blob.style.marginTop = '0'; 
                     blob.style.marginLeft = '0'; 
-                    // Set initial size (will be adjusted by checkCollisionAndResize)
                     blob.style.width = FULL_BLOB_WIDTH;
                     blob.style.height = FULL_BLOB_HEIGHT;
-                    // Apply Centered Jiggle
                     blob.classList.add('jiggling-center');
                     blob.classList.remove('jiggling-corner');
                     
@@ -585,9 +575,9 @@
                     inputArea.style.marginLeft = '0'; 
                     inputArea.style.top = 'auto'; 
                     
-                    // RUN COLLISION CHECK to shrink blob if necessary
                     checkCollisionAndResize();
                     
+                    // Set initial text
                     responseText.textContent = 'Research Mode is ON. I will give detailed, factual answers with sources.';
 
                 } else if (currentMode === 'image') {
@@ -604,9 +594,8 @@
                     blob.style.bottom = 'auto'; 
                     blob.style.marginTop = '0'; 
                     blob.style.marginLeft = '0'; 
-                    blob.style.transform = 'none'; // Ensure no transform for corner position
-                    blob.classList.add('image-mode'); // Class for smaller eyes/mouth
-                    // Apply Corner Jiggle
+                    blob.style.transform = 'none'; 
+                    blob.classList.add('image-mode'); 
                     blob.classList.remove('jiggling-center');
                     blob.classList.add('jiggling-corner');
 
@@ -632,9 +621,10 @@
                     inputArea.style.marginLeft = '0'; 
                     inputArea.style.top = 'auto'; 
                     
-                    // Display current image prompt or instructions
+                    // If we have a last prompt, show the mock image for context
                     if (lastImagePrompt) {
-                        // Re-trigger mock generation on mode switch to ensure canvas is drawn
+                        // We generate the mock image here explicitly to ensure visibility
+                        // if the user switches modes back and forth.
                         generateMockImage(lastImagePrompt);
                     } else {
                          imageLoadingText.textContent = 'Describe the image you want to create!';
@@ -655,7 +645,6 @@
                     blob.style.marginLeft = '0'; 
                     blob.style.width = FULL_BLOB_WIDTH;
                     blob.style.height = FULL_BLOB_HEIGHT;
-                    // Apply Centered Jiggle, which includes the translateX(-50%)
                     blob.classList.add('jiggling-center');
                     blob.classList.remove('jiggling-corner');
 
@@ -669,11 +658,8 @@
                     responseBubble.style.marginTop = '0'; 
                     responseBubble.style.marginLeft = '0'; 
                     responseBubble.style.transform = 'translateX(-50%)'; 
-                    
-                    // Clean Aesthetic: Semi-transparent background with modern shadow
                     responseBubble.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                     responseBubble.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.37)'; 
-                    
                     responseBubble.style.width = 'auto';
                     responseBubble.style.maxWidth = '600px'; 
                     responseBubble.style.minHeight = '0';
@@ -721,7 +707,7 @@
                 }
                 
                 if (previousMode !== currentMode) {
-                    updateUIForMode(); // Update UI if mode changed
+                    updateUIForMode(); 
                 }
 
                 sendButton.disabled = true;
@@ -729,16 +715,15 @@
 
                 if (currentMode === 'image') {
                     const cleanPrompt = userInput.value.trim().toLowerCase();
-                    if (cleanPrompt.includes('regenerate')) { // Check for 'regenerate' keyword
+                    if (cleanPrompt.includes('regenerate')) { 
                         if (lastImagePrompt) {
-                            getGeneratedImage(lastImagePrompt, true); // Pass true for regenerate
+                            getGeneratedImage(lastImagePrompt, true); 
                         } else {
                             imageLoadingText.textContent = "Please provide an image prompt first before trying to regenerate!";
                             sendButton.disabled = false;
                             userInput.value = '';
                         }
                     } else {
-                        // Extract prompt by removing trigger words and store
                         lastImagePrompt = prompt.replace(imageRegex, '').trim(); 
                         getGeneratedImage(lastImagePrompt); 
                     }
@@ -774,11 +759,11 @@
                     
                     // --- MOCK MODE CHECK (Text) ---
                     if (response.status === 403) {
-                        console.error("403 Network Block Detected for Text. Switching to Mock Mode.");
-                         if (currentMode === 'research') {
-                            responseText.textContent = 'RESEARCH FAILED (Network Block): System overload detected! I can\'t reach the real web, but here\'s a mock answer: The largest known star is UY Scuti, and water boils at 100°C.';
+                        // **INCORPORATE USER-DEFINED MOCK TEXT**
+                        if (currentMode === 'research') {
+                            responseText.textContent = MOCK_RESEARCH;
                         } else {
-                            responseText.textContent = 'CONNECTION FAILED (Network Block): Oopsie! My network cable is unplugged. The answer is 42 and your hat looks amazing!';
+                            responseText.textContent = MOCK_NORMAL;
                         }
                         return; // Exit here, mock response is displayed
                     }
@@ -793,19 +778,14 @@
                         aiText = candidate.content.parts[0].text;
                     }
                     
-                    // Note: We don't display sources in this clean UI
-                    
                     const finalResponse = currentMode === 'research' ? aiText : aiText.substring(0, MAX_CHARS);
                     responseText.textContent = finalResponse;
                     
                 } catch (error) {
-                    console.error("Gemini API Error:", error);
-                    // Use a general mock error if it wasn't a 403 (e.g., timeout, 500)
                     responseText.textContent = "Oops! My connection noodle broke. Try again in a minute!";
                 } finally {
                     sendButton.disabled = false;
                     userInput.value = '';
-                    // Re-run collision check after response is loaded, as text length might change response bubble height
                     if (currentMode === 'research') {
                          checkCollisionAndResize();
                     }
@@ -840,9 +820,9 @@
                     
                     // --- MOCK MODE CHECK (Image) ---
                     if (response.status === 403) {
-                        console.error("403 Network Block Detected for Image. Switching to Mock Mode.");
-                        generateMockImage(imagePrompt);
-                        return; // Exit here, mock image is displayed
+                        // This calls the function that draws the canvas with the specific mock text.
+                        generateMockImage(imagePrompt); 
+                        return; 
                     }
                     // --- End MOCK MODE CHECK (Image) ---
 
@@ -871,8 +851,7 @@
                     }
 
                 } catch (error) {
-                    console.error("Image Generation Error:", error);
-                    // If the error isn't a 403 (e.g., a connection time-out or internal error)
+                    // Use mock image for all API errors/timeouts as well
                     generateMockImage(imagePrompt);
                 } finally {
                     sendButton.disabled = false;
@@ -910,7 +889,7 @@
                  }
             });
 
-            // Initial setup call - NO LONGER STRICTLY NEEDED FOR INPUT BAR VISIBILITY
+            // Initial setup call 
             updateUIForMode();
         });
     </script>
