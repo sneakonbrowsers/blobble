@@ -358,16 +358,15 @@
             const SHRUNK_BLOB_WIDTH = '120px';
             const SHRUNK_BLOB_HEIGHT = '100px';
 
-            // --- API MODELS & URLS (CRITICAL FIXES HERE) ---
-            // CRITICAL FIX 1: Use the most stable model, gemini-2.5-flash
-            const textModel = "gemini-2.5-flash"; 
+            // --- API MODELS & URLS (CRITICAL LEGACY FIXES HERE) ---
+            // CRITICAL FIX 1: Use the legacy model name for maximum compatibility in restricted environments.
+            const textModel = "gemini-pro"; 
             
             // CRITICAL FIX 2: Simplify URL construction to ensure environment proxying works.
-            // Explicitly include '?key=${apiKey}' to trigger token injection.
             const textApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${apiKey}`;
 
-            // CRITICAL FIX 3: Use the standard, preferred imagen-3.0-generate-002
-            const imageModel = "imagen-3.0-generate-002";
+            // CRITICAL FIX 3: Use the legacy image model name.
+            const imageModel = "imagen-generate-002";
             const imageApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:predict?key=${apiKey}`;
             
             
@@ -743,7 +742,7 @@
                 imageLoadingText.style.display = 'block';
                 
                 try {
-                    // *** PAYLOAD FOR imagen-3.0-generate-002 (predict endpoint) ***
+                    // *** PAYLOAD FOR imagen-generate-002 (predict endpoint) ***
                     const payload = { 
                         instances: [{ prompt: imagePrompt }], 
                         parameters: { "sampleCount": 1 } 
@@ -756,7 +755,7 @@
                         body: JSON.stringify(payload)
                     });
 
-                    // *** RESPONSE PARSING FOR imagen-3.0-generate-002 ***
+                    // *** RESPONSE PARSING FOR imagen-generate-002 ***
                     const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
                     // *** END RESPONSE PARSING ***
 
