@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blobble AI</title>
+    <title>BlobbleBrain Multi-Mode AI Client</title>
     
     <style>
         /* CSS STYLING */
@@ -353,11 +353,11 @@
                 ? `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${apiKey}`
                 : `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent`;
 
-            // Image Model Configuration (using the recommended model)
-            const imageModel = "imagen-3.0-generate-002";
+            // Image Model Configuration (Switching to flash-image-preview to resolve 403 error)
+            const imageModel = "gemini-2.5-flash-image-preview";
             const imageApiUrl = apiKey 
-                ? `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:predict?key=${apiKey}`
-                : `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:predict`;
+                ? `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:generateContent?key=${apiKey}`
+                : `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:generateContent`;
             
             
             /**
@@ -592,6 +592,10 @@
                             if (response.status === 401) {
                                 throw new Error("Authentication failed (401). Ensure API key is correct or environment is properly configured.");
                             }
+                            // Crucial check: re-throw 403 error for image generation if the workaround fails
+                            if (response.status === 403 && url.includes("gemini-2.5-flash-image-preview")) {
+                                throw new Error("Authentication failed (403). The image generation service may not be enabled for your account or environment.");
+                            }
                             throw new Error("HTTP error! status: " + response.status);
                         }
                         return response.json();
@@ -720,23 +724,31 @@
                 imageLoadingText.style.display = 'block';
                 
                 try {
+                    // *** NEW PAYLOAD FOR gemini-2.5-flash-image-preview (generateContent endpoint) ***
                     const payload = {
-                        instances: [{ prompt: imagePrompt }],
-                        parameters: { "sampleCount": 1 }
+                        contents: [{
+                            parts: [{ text: imagePrompt }]
+                        }],
+                        generationConfig: {
+                            responseModalities: ['TEXT', 'IMAGE']
+                        },
                     };
+                    // *** END NEW PAYLOAD ***
 
-                    // Uses the new imageApiUrl constant
+                    // Uses the new imageApiUrl constant (now pointing to gemini-2.5-flash-image-preview:generateContent)
                     const result = await fetchWithRetry(imageApiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
 
-                    let base64Data = null;
-                    if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-                        base64Data = result.predictions[0].bytesBase64Encoded;
-                    }
-                    
+                    // *** NEW RESPONSE PARSING FOR gemini-2.5-flash-image-preview ***
+                    const candidate = result.candidates?.[0];
+                    // Look for the part that contains inline image data
+                    const imagePart = candidate?.content?.parts?.find(p => p.inlineData && p.inlineData.mimeType.startsWith('image/'));
+                    let base64Data = imagePart?.inlineData?.data || null;
+                    // *** END NEW RESPONSE PARSING ***
+
                     if (base64Data) {
                         generatedImage.src = `data:image/png;base64,${base64Data}`;
                         generatedImage.alt = imagePrompt;
