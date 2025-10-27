@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlobbleBrain AI App</title>
+    <title>BlobbleBrain AI App (Offset Blob)</title>
     
 
 <script src="https://cdn.tailwindcss.com"></script>
     
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #000;
             color: #fff;
-            overflow: hidden; /* Prevent scroll for the full-screen effect */
+            overflow: hidden; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -31,12 +31,12 @@
             align-items: center;
         }
 
-        /* Base Blob Styling (Invisible by default, rendered by JS) */
+        /* Base Blob Styling - No fixed position here, controlled by JS */
         .blob {
             position: absolute;
-            width: 200px;
-            height: 200px;
-            background-color: transparent; /* Changed to transparent, color set by JS */
+            width: 200px; 
+            height: 200px; 
+            background-color: transparent; 
             border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
             display: flex;
             justify-content: center;
@@ -44,37 +44,19 @@
             font-size: 24px;
             font-weight: bold;
             transition: all 0.5s ease-in-out, background-color 0.8s ease;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); /* Soft shadow */
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); 
             animation: jiggle 4s infinite ease-in-out, morph 8s ease-in-out infinite both;
             z-index: 10;
         }
 
-        /* Specific Blob Styles */
-        #normal-blob {
-            background-color: #3b82f6; /* Blue */
-            box-shadow: 0 0 30px #3b82f6;
-            top: 5%; /* Higher */
-            left: 50%;
-            transform: translateX(-50%);
+        /* Specific Blob Colors */
+        #normal-blob { 
+            background-color: #3b82f6; 
+            box-shadow: 0 0 30px #3b82f6; 
+            filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.7));
         }
-        #research-blob {
-            background-color: #ef4444; /* Red */
-            box-shadow: 0 0 30px #ef4444;
-            top: 50%; /* Default for research */
-            left: calc(100% - 150px); /* Top Right Corner */
-            transform: translate(-50%, -50%); /* Centered on its own corner point */
-            width: 150px; /* Smaller in corner */
-            height: 150px;
-        }
-        #image-blob {
-            background-color: #9333ea; /* Purple */
-            box-shadow: 0 0 30px #9333ea;
-            top: 50%; /* Default for image */
-            left: 150px; /* Top Left Corner */
-            transform: translate(-50%, -50%); /* Centered on its own corner point */
-            width: 150px; /* Smaller in corner */
-            height: 150px;
-        }
+        #research-blob { background-color: #ef4444; box-shadow: 0 0 30px #ef4444; }
+        #image-blob { background-color: #9333ea; box-shadow: 0 0 30px #9333ea; }
 
         .eye {
             position: absolute;
@@ -83,17 +65,8 @@
             background-color: #000;
             border-radius: 50%;
         }
-
-        .left-eye {
-            left: 35%;
-            top: 40%;
-        }
-
-        .right-eye {
-            right: 35%;
-            top: 40%;
-        }
-
+        .left-eye { left: 35%; top: 40%; }
+        .right-eye { right: 35%; top: 40%; }
         .mouth {
             position: absolute;
             width: 40px;
@@ -103,7 +76,7 @@
             top: 60%;
         }
 
-        /* Smaller eye/mouth for corner blobs */
+        /* Corner Blob (Passive) Styling - Applied by JS */
         .corner-blob .eye {
             width: 12px;
             height: 12px;
@@ -116,39 +89,32 @@
 
         #response-bubble {
             position: absolute;
-            background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent */
-            backdrop-filter: blur(8px); /* Glassmorphism effect */
+            background-color: rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(8px); 
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 1.5rem; /* More rounded */
+            border-radius: 1.5rem; 
             padding: 2rem; 
-            max-width: 600px; /* Wider */
             min-height: 80px;
-            
-            /* SCROLLING FEATURE - Increased max-height */
-            max-height: 60vh; 
             overflow-y: auto; 
-
             display: flex;
+            flex-direction: column; 
             align-items: center;
             justify-content: center;
             text-align: center;
             color: #e0e0e0;
-            font-size: 1.1rem;
+            font-size: 1.05rem; 
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
             transition: all 0.5s ease-in-out;
-            top: 45%; /* Centered vertically */
-            left: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 1;
             z-index: 5;
         }
         
-        /* This rule ensures content inside the scrollable area has safe padding */
+        /* Ensures content inside the scrollable area wraps and fits */
         #response-bubble pre {
             white-space: pre-wrap;
+            word-break: break-word; 
             margin: 0;
-            padding: 0.5rem 0; /* Extra top/bottom padding for safer scrolling */
-            text-align: left;
+            padding: 0.5rem 0; 
+            text-align: left; /* Text remains left-aligned inside the bubble */
             width: 100%;
             box-sizing: border-box;
         }
@@ -156,19 +122,20 @@
 
         #input-area {
             position: absolute;
-            bottom: 30px; /* Fixed at bottom */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%; /* Wider input */
-            max-width: 700px;
+            bottom: 30px; 
             display: flex;
             gap: 10px;
-            z-index: 20; /* Ensure it's always on top */
-            padding: 10px; /* Padding for better visibility */
-            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background for the bar */
+            z-index: 20; 
+            padding: 10px; 
+            background-color: rgba(0, 0, 0, 0.6); 
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+            /* Initial positioning, overridden by JS */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%; 
+            max-width: 700px;
         }
 
         #user-input {
@@ -215,7 +182,7 @@
             width: 24px;
             height: 24px;
             animation: spin 1s linear infinite;
-            display: none; /* Hidden by default */
+            display: none; 
             margin-left: 10px;
         }
         @keyframes spin {
@@ -223,12 +190,13 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Jiggle and Morph animations */
         @keyframes jiggle {
-            0% { transform: translateX(-50%) translateY(0px) rotate(0deg); }
-            25% { transform: translateX(-50%) translateY(2px) rotate(0.5deg); }
-            50% { transform: translateX(-50%) translateY(0px) rotate(0deg); }
-            75% { transform: translateX(-50%) translateY(-2px) rotate(-0.5deg); }
-            100% { transform: translateX(-50%) translateY(0px) rotate(0deg); }
+            0% { transform: translateY(0px) rotate(0deg); }
+            25% { transform: translateY(2px) rotate(0.5deg); }
+            50% { transform: translateY(0px) rotate(0deg); }
+            75% { transform: translateY(-2px) rotate(-0.5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
         }
 
         @keyframes morph {
@@ -244,25 +212,20 @@
             max-width: 500px;
             max-height: 500px;
             margin: 0 auto;
-            border: 2px dashed #9333ea; /* Purple border for image mode */
+            border: 2px dashed #9333ea; 
             border-radius: 1rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            min-height: 200px; /* Ensure visibility */
-            overflow: hidden; /* To contain the image/canvas */
+            min-height: 200px; 
+            overflow: hidden; 
         }
         #image-output {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            border-radius: 0.8rem;
-        }
-        #image-output-canvas {
-            max-width: 100%;
-            max-height: 100%;
             border-radius: 0.8rem;
         }
         
@@ -302,7 +265,7 @@
 
         
 
-<div id="response-bubble">Hello! What's on your mind?</div>
+<div id="response-bubble">Hello! Ask me about anything, or type **'research'** or **'generate an image'** to switch modes!</div>
         
         
 
@@ -317,14 +280,18 @@
         // --- Firebase Globals (Required but not used for this basic API demo) ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        // RENAMED local constant to 'initialAuthToken' to avoid TDZ ReferenceError
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
         // --- End Firebase Globals ---
 
         // --- API Constants ---
-        const API_KEY = "AIzaSyCGQAM_W9iytieFVQAwTXZf6sv5f2Ns5Q8"; // Your API Key
-        const TEXT_MODEL = "gemini-2.5-flash-preview-09-2025"; // Stable for text
-        const IMAGE_MODEL = "gemini-2.5-flash-image-preview"; // FIX: Switched to a model available in this environment
+        const API_KEY = ""; 
+        const TEXT_MODEL = "gemini-2.5-flash-preview-09-2025"; 
+        const IMAGE_MODEL = "gemini-2.5-flash-image-preview"; 
+
+        // --- Blob Sizing Constants ---
+        const ACTIVE_BLOB_SIZE = '180px';
+        const PASSIVE_BLOB_SIZE = '120px';
+        const MAX_CHAT_HEIGHT = '60vh'; 
 
         // --- UI Elements ---
         const normalBlob = document.getElementById('normal-blob');
@@ -334,11 +301,11 @@
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
         const loader = document.getElementById('loader');
-        const inputArea = document.getElementById('input-area'); // Corrected variable definition
+        const inputArea = document.getElementById('input-area'); 
         const appContainer = document.getElementById('app-container');
 
-        let currentMode = 'normal'; // 'normal', 'research', 'image'
-        let currentPrompt = ''; // Store the last prompt for image regeneration
+        let currentMode = 'normal'; 
+        let currentPrompt = ''; 
 
         // --- Event Listeners ---
         userInput.addEventListener('keypress', (e) => {
@@ -353,50 +320,43 @@
 
         /**
          * Generic API call with exponential backoff and retries.
-         * @param {string} url - The API endpoint URL.
-         * @param {object} options - Fetch options (method, headers, body).
-         * @param {number} maxRetries - Maximum number of retries.
-         * @param {string} mode - The current mode ('Normal', 'Research', 'Image') for status messages.
          */
         async function generateWithRetry(url, options, maxRetries = 3, mode = 'Normal') {
-            const tempOutputDiv = document.createElement('div'); // Create a temporary div for status updates
-            responseBubble.innerHTML = ''; // Clear bubble
-            responseBubble.appendChild(tempOutputDiv);
+            const tempOutputDiv = document.createElement('div'); 
+            // Ensure the content inside the bubble is treated as pre-formatted text for reading mode
+            responseBubble.innerHTML = ''; 
+            const preElement = document.createElement('pre');
+            preElement.appendChild(tempOutputDiv);
+            responseBubble.appendChild(preElement);
 
             for (let attempt = 0; attempt < maxRetries; attempt++) {
                 try {
-                    // Update status in the bubble
                     if (mode === 'image') {
-                        tempOutputDiv.innerHTML = `<div class="loading-message"><div class="spinner"></div> Making your image come to life! (Attempt ${attempt + 1}/${maxRetries})</div>`;
+                        tempOutputDiv.innerHTML = `<div class="loading-message"><div id="loader" class="spinner"></div> Making your image come to life! (Attempt ${attempt + 1}/${maxRetries})</div>`;
                     } else {
-                        // Thinking...
                         tempOutputDiv.textContent = `Thinking... (Attempt ${attempt + 1}/${maxRetries})`; 
                     }
                     
                     const response = await fetch(url, options);
 
-                    // Check for rate limits (429) or server errors (5xx) that warrant a retry
                     if (response.status === 429 || response.status >= 500) {
                         if (attempt < maxRetries - 1) {
-                            const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500; // Exponential backoff + jitter
+                            const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500; 
                             tempOutputDiv.textContent += ` Server error (${response.status}). Retrying in ${Math.round(delay / 1000)}s...`;
                             await sleep(delay);
-                            continue; // Go to next attempt
+                            continue; 
                         }
                     }
 
-                    // For any non-retryable error (e.g., 400 Bad Request, 401 Unauthorized/API Key issue)
                     if (!response.ok) {
                         const errorData = await response.json().catch(() => ({}));
                         const message = errorData.error?.message || `HTTP Error ${response.status}: ${response.statusText}`;
                         throw new Error(message);
                     }
 
-                    // Success
                     return await response.json();
 
                 } catch (error) {
-                    // Catch network errors (like DNS lookup failure, timeout, etc.)
                     if (attempt < maxRetries - 1) {
                         const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
                         tempOutputDiv.textContent = `Network/API error. Retrying in ${Math.round(delay / 1000)}s...`;
@@ -404,7 +364,7 @@
                         console.error(`Attempt ${attempt + 1} failed:`, error.message);
                         continue;
                     }
-                    throw error; // Re-throw the error if all retries fail
+                    throw error; 
                 }
             }
             throw new Error("API request failed after all retries.");
@@ -412,65 +372,131 @@
 
 
         /**
+         * Clears all positional and size styles from a blob element.
+         */
+        function cleanupBlobStyles(blobElement) {
+            blobElement.style.top = '';
+            blobElement.style.bottom = '';
+            blobElement.style.left = '';
+            blobElement.style.right = '';
+            blobElement.style.transform = '';
+            blobElement.style.width = '';
+            blobElement.style.height = '';
+        }
+
+        /**
          * Switches the active blob and updates UI for the given mode.
-         * @param {string} mode - 'normal', 'research', 'image'
          */
         function updateUIForMode(mode) {
             currentMode = mode;
             const allBlobs = [normalBlob, researchBlob, imageBlob];
-            const currentBlobElement = document.getElementById(`${mode}-blob`);
-
+            
+            // 1. Cleanup all blobs and set class status
             allBlobs.forEach(blob => {
+                cleanupBlobStyles(blob);
                 blob.classList.add('hidden');
-                blob.classList.remove('current-blob', 'corner-blob'); // Clean up classes
+                blob.classList.remove('current-blob', 'corner-blob');
             });
             
+            const currentBlobElement = document.getElementById(`${mode}-blob`);
             currentBlobElement.classList.remove('hidden');
             currentBlobElement.classList.add('current-blob');
+            
+            // --- 2. LAYOUT SWITCHING: Normal (Offset) vs. Split (Left Panel) ---
 
-            // Adjust input area position based on mode
             if (mode === 'normal') {
-                responseBubble.style.top = '45%';
-                responseBubble.style.left = '50%';
-                responseBubble.style.transform = 'translate(-50%, -50%)';
-                responseBubble.style.maxWidth = '600px';
+                // OFFSET BLOB, CENTRED BUBBLE BELOW
+                
+                // Active Blob: Shifted Up and Left (Interpreting 3.5 inches as a 10% viewport shift)
+                currentBlobElement.style.width = '200px';
+                currentBlobElement.style.height = '200px';
+                currentBlobElement.style.top = '40%'; // Shifted up
+                currentBlobElement.style.left = '40%'; // Shifted left
+                currentBlobElement.style.transform = 'translate(-50%, -50%)'; // Maintain center alignment based on new percentage position
 
+                // Response Bubble: Centered horizontally, below the blob's new vertical position
+                responseBubble.style.top = '65%'; // Adjusted to sit below the blob
+                responseBubble.style.bottom = 'auto'; 
+                responseBubble.style.left = '50%'; 
+                responseBubble.style.right = 'auto'; 
+                responseBubble.style.transform = 'translateX(-50%)'; // Horizontal centering
+                responseBubble.style.maxWidth = '600px';
+                responseBubble.style.textAlign = 'center'; 
+                responseBubble.style.maxHeight = MAX_CHAT_HEIGHT; 
+                
+                // Input Area: Fixed at the bottom center
                 inputArea.style.bottom = '30px';
                 inputArea.style.left = '50%';
+                inputArea.style.right = 'auto';
                 inputArea.style.transform = 'translateX(-50%)';
                 inputArea.style.width = '90%';
+                inputArea.style.maxWidth = '700px';
+
             } else {
-                responseBubble.style.top = '50%';
-                responseBubble.style.left = '50%';
-                responseBubble.style.transform = 'translate(-50%, -50%)';
-                responseBubble.style.maxWidth = 'calc(100% - 300px)'; // Make room for corner blobs
+                // SPLIT LAYOUT (Research/Image) - Text/Input on Left, Blobs on Right
                 
+                // Response Bubble: Fills the entire left/center area
+                responseBubble.style.top = '30px'; 
+                responseBubble.style.bottom = '110px'; 
+                responseBubble.style.left = '30px'; 
+                responseBubble.style.right = '260px'; // Leaves 230px for the blob panel + 30px margin
+                responseBubble.style.transform = 'none'; 
+                responseBubble.style.maxWidth = 'none'; 
+                responseBubble.style.textAlign = 'left';
+                responseBubble.style.maxHeight = 'none'; // Allow full height scroll
+                
+                // Input Area: Fills the bottom area below the response bubble
                 inputArea.style.bottom = '30px';
-                inputArea.style.right = '30px';
-                inputArea.style.left = 'auto'; // Disable left positioning
-                inputArea.style.transform = 'none'; // Disable transform
-                inputArea.style.width = 'calc(100% - 300px)'; // Make room for corner blobs
-            }
-            
-            // Adjust corner blob positions
-            if (mode === 'research') {
-                normalBlob.classList.remove('hidden');
-                normalBlob.classList.add('corner-blob');
-                normalBlob.style.top = '50px'; /* Top Right Corner */
-                normalBlob.style.left = 'calc(100% - 150px)';
-                normalBlob.style.transform = 'none';
-            } else if (mode === 'image') {
-                normalBlob.classList.remove('hidden');
-                normalBlob.classList.add('corner-blob');
-                normalBlob.style.top = '50px'; /* Top Left Corner */
-                normalBlob.style.left = '100px';
-                normalBlob.style.transform = 'none';
+                inputArea.style.left = '30px';
+                inputArea.style.right = '260px';
+                inputArea.style.transform = 'none'; 
+                inputArea.style.width = 'auto'; 
+                inputArea.style.maxWidth = 'none';
+
+
+                // --- 3. SPLIT LAYOUT BLOB POSITIONING ---
+                
+                // Active Blob: Larger, centered vertically on the right panel
+                currentBlobElement.style.width = ACTIVE_BLOB_SIZE;
+                currentBlobElement.style.height = ACTIVE_BLOB_SIZE;
+                currentBlobElement.style.top = '50%';
+                currentBlobElement.style.right = '70px'; 
+                currentBlobElement.style.transform = 'translateY(-50%)';
+                
+                // Set passive blobs based on mode
+                if (mode === 'research') {
+                    // Passive Blob: Blue (Normal), small, top right corner
+                    normalBlob.classList.remove('hidden');
+                    normalBlob.classList.add('corner-blob');
+                    normalBlob.style.width = PASSIVE_BLOB_SIZE;
+                    normalBlob.style.height = PASSIVE_BLOB_SIZE;
+                    normalBlob.style.top = '50px';
+                    normalBlob.style.right = '50px';
+                    
+                } else if (mode === 'image') {
+                    // Passive Blob: Blue (Normal), small, top right corner
+                    normalBlob.classList.remove('hidden');
+                    normalBlob.classList.add('corner-blob');
+                    normalBlob.style.width = PASSIVE_BLOB_SIZE;
+                    normalBlob.style.height = PASSIVE_BLOB_SIZE;
+                    normalBlob.style.top = '50px';
+                    normalBlob.style.right = '50px';
+
+                    // Passive Blob: Red (Research), small, bottom right corner
+                    researchBlob.classList.remove('hidden');
+                    researchBlob.classList.add('corner-blob');
+                    researchBlob.style.width = PASSIVE_BLOB_SIZE;
+                    researchBlob.style.height = PASSIVE_BLOB_SIZE;
+                    researchBlob.style.top = 'auto';
+                    researchBlob.style.bottom = '50px';
+                    researchBlob.style.right = '50px'; 
+                }
             }
         }
 
 
         /**
-         * Main handler for user input. Determines mode and calls appropriate API function.
+         * Main handler for user input. Determines mode and calls appropriate API function. 
          */
         async function handleUserInput() {
             const prompt = userInput.value.trim();
@@ -478,17 +504,20 @@
 
             sendButton.disabled = true;
             loader.style.display = 'block';
-            userInput.value = ''; // Clear input
+            userInput.value = ''; 
 
-            responseBubble.innerHTML = ''; // Clear previous response
+            responseBubble.innerHTML = ''; 
 
             let newMode = currentMode;
+            // Check if the prompt requires a mode switch
             if (prompt.toLowerCase().includes('research') && currentMode !== 'research') {
                 newMode = 'research';
             } else if ((prompt.toLowerCase().includes('generate an image') || prompt.toLowerCase().includes('create an image')) && currentMode !== 'image') {
                 newMode = 'image';
-                currentPrompt = prompt.replace(/generate an image of|create an image of/i, '').trim(); // Extract image prompt
+                // Store cleaned prompt for image mode
+                currentPrompt = prompt.replace(/generate an image of|create an image of/i, '').trim(); 
             } else if (currentMode !== 'normal' && !prompt.toLowerCase().includes('research') && !prompt.toLowerCase().includes('image')) {
+                // If we're not asking for research/image anymore, revert to normal
                 newMode = 'normal';
             }
             
@@ -502,8 +531,7 @@
                 }
             } catch (error) {
                 console.error("API call failed:", error);
-                // Display the specific error message from generateWithRetry
-                responseBubble.innerHTML = `<div style="color:red; font-weight:bold;">Error: ${error.message}</div>`;
+                responseBubble.innerHTML = `<pre style="color:red; font-weight:bold;">Error: ${error.message}</pre>`;
             } finally {
                 sendButton.disabled = false;
                 loader.style.display = 'none';
@@ -512,7 +540,7 @@
 
 
         /**
-         * Handles fetching AI responses for normal and research modes.
+         * Handles fetching AI responses for normal and research modes. 
          */
         async function getAIResponse(prompt, mode) {
             const isResearch = mode === 'research';
@@ -544,10 +572,8 @@
                     let generatedText = candidate.content.parts[0].text;
                     let sourcesText = "";
 
-                    // CLEANUP STEP: Remove common Markdown characters * and #
                     generatedText = generatedText.replace(/(\*\*|\*|##|#)/g, ''); 
 
-                    // Extract and format citations for research mode
                     if (isResearch) {
                         const groundingMetadata = candidate.groundingMetadata;
                         if (groundingMetadata && groundingMetadata.groundingAttributions) {
@@ -563,25 +589,24 @@
                             }
                         }
                     }
-                    // Use innerHTML and pre tag. CSS handles the specific formatting.
-                    responseBubble.innerHTML = `<pre>${generatedText + sourcesText}</pre>`;
+                    responseBubble.querySelector('pre').textContent = generatedText + sourcesText;
+                    // Ensure text alignment is correct for the current mode
+                    responseBubble.style.textAlign = mode === 'normal' ? 'center' : 'left'; 
+
                 } else {
-                    responseBubble.textContent = `Error: Empty or malformed response from ${mode} API.`;
+                    responseBubble.innerHTML = `<pre>Error: Empty or malformed response from ${mode} API.</pre>`;
                 }
             } catch (error) {
-                // generateWithRetry already updated the bubble, just re-throw to stop
                 throw error; 
             }
         }
 
         /**
-         * Handles fetching generated images for image mode.
+         * Handles fetching generated images for image mode. 
          */
         async function getGeneratedImage(prompt) {
-            // FIX: Changed URL construction for gemini-2.5-flash-image-preview
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL}:generateContent?key=${API_KEY}`;
             
-            // FIX: Changed payload structure for gemini-2.5-flash-image-preview
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
@@ -599,7 +624,6 @@
             try {
                 const result = await generateWithRetry(apiUrl, options, 3, 'image');
 
-                // FIX: Adjusted response parsing for gemini-2.5-flash-image-preview
                 const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
 
                 if (base64Data) {
@@ -611,11 +635,12 @@
                             <img id="image-output" src="${imageUrl}" alt="Generated Image by BlobbleBrain">
                         </div>
                     `;
+                    // When in image mode, text alignment must be 'center' for the image container
+                    responseBubble.style.textAlign = 'center'; 
                 } else {
-                    responseBubble.innerHTML = `<div style="color:red; font-weight:bold;">Image API did not return valid image data. Try a different prompt.</div>`;
+                    responseBubble.innerHTML = `<pre style="color:red; font-weight:bold;">Image API did not return valid image data. Try a different prompt.</pre>`;
                 }
             } catch (error) {
-                // If generateWithRetry throws, it already updated the bubble
                 throw error; 
             }
         }
