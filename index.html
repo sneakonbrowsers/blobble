@@ -358,9 +358,9 @@
             const SHRUNK_BLOB_WIDTH = '120px';
             const SHRUNK_BLOB_HEIGHT = '100px';
 
-            // --- API MODELS & URLS ---
-            // CRITICAL FIX 1: Switch to stable model gemini-2.5-pro to resolve 403 error
-            const textModel = "gemini-2.5-pro"; 
+            // --- API MODELS & URLS (CRITICAL FIXES HERE) ---
+            // CRITICAL FIX 1: Using gemini-2.5-flash for maximum accessibility and stability.
+            const textModel = "gemini-2.5-flash"; 
             
             // Text API URL (uses generateContent endpoint)
             const textApiUrl = (typeof __gemini_api_url !== 'undefined' && __gemini_api_url) 
@@ -369,8 +369,8 @@
                     ? `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${apiKey}`
                     : `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent`);
 
-            // CRITICAL FIX 2: Switch to stable image model imagen-3.0-generate-002 (uses predict endpoint)
-            const imageModel = "imagen-3.0-generate-002";
+            // CRITICAL FIX 2: Using the stable but older imagen-2.1 to bypass potential restrictions on newer 3.0.
+            const imageModel = "imagen-2.1-generate-002";
             // Image API URL (uses predict endpoint)
             const imageApiUrl = apiKey 
                 ? `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:predict?key=${apiKey}`
@@ -749,7 +749,7 @@
                 imageLoadingText.style.display = 'block';
                 
                 try {
-                    // *** PAYLOAD FOR imagen-3.0-generate-002 (predict endpoint) ***
+                    // *** PAYLOAD FOR imagen-2.1-generate-002 (predict endpoint) ***
                     const payload = { 
                         instances: [{ prompt: imagePrompt }], 
                         parameters: { "sampleCount": 1 } 
@@ -762,7 +762,7 @@
                         body: JSON.stringify(payload)
                     });
 
-                    // *** RESPONSE PARSING FOR imagen-3.0-generate-002 ***
+                    // *** RESPONSE PARSING FOR imagen-2.1-generate-002 ***
                     const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
                     // *** END RESPONSE PARSING ***
 
@@ -824,4 +824,3 @@
     </script>
 </body>
 </html>
-
