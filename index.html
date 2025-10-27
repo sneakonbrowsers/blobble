@@ -8,6 +8,11 @@
     <style>
         /* CSS STYLING */
         
+        /* Box sizing fix to prevent elements from being pushed out of the viewport */
+        * {
+            box-sizing: border-box;
+        }
+
         /* General Setup for Full Viewport Layout */
         body {
             background-color: black; 
@@ -62,7 +67,7 @@
             border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
-            z-index: 20; 
+            z-index: 30; /* Increased Z-index for buttons */
             display: none; /* Hidden by default */
             transition: background-color 0.2s;
         }
@@ -142,7 +147,7 @@
             position: absolute;
             display: flex;
             gap: 10px;
-            z-index: 15;
+            z-index: 20; /* <-- INCREASED Z-INDEX for visibility */
             transition: all 0.5s;
             padding: 10px 0; /* Padding for the fixed bottom bar look */
         }
