@@ -30,10 +30,9 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            /* Container for centered elements in Normal Mode */
         }
 
-        /* --- Positioning Elements - Default (Research Mode) Styles --- */
+        /* --- Positioning Elements - Default (Normal Mode) Styles --- */
 
         /* 1. Blob positioning */
         #blobblebrain {
@@ -142,14 +141,22 @@
             display:none; /* Hide by default */
         }
 
-        /* 6. Input Area - FIXED TO BOTTOM FOR CLEAN MODE */
+        /* 6. Input Area - CRITICAL FIX: Set default position in CSS for visibility */
         #input-area {
             position: absolute;
             display: flex;
             gap: 10px;
             z-index: 15;
             transition: all 0.5s;
-            padding: 10px 0; /* Padding for the fixed bottom bar look */
+            padding: 10px 0; 
+
+            /* --- GUARANTEED POSITION FOR NORMAL MODE --- */
+            bottom: 20px; 
+            left: 50%;
+            transform: translateX(-50%); /* Centered */
+            width: 90%;
+            max-width: 700px;
+            /* ------------------------------------------ */
         }
 
         #user-input {
@@ -288,7 +295,7 @@
 <button id="exit-research-mode" class="exit-button" style="display:none;">Exit Research Mode</button>
         <button id="exit-image-mode" class="exit-button" style="display:none;">Exit Image Mode</button>
         
-        <div id="blobblebrain"> 
+        <div id="blobblebrain" style="top: 30%; left: 50%; background-color: rgb(0, 122, 255); box-shadow: rgba(0, 122, 255, 0.8) 0px 0px 25px, rgba(255, 255, 255, 0.6) 0px 0px 12px; width: 200px; height: 180px;" class="jiggling-center"> 
             <div class="eyes">
                 <div class="eye"></div>
                 <div class="eye"></div>
@@ -296,7 +303,7 @@
             <div class="mouth"></div>
         </div>
 
-        <div id="response-bubble">
+        <div id="response-bubble" style="top: 55%; left: 50%; transform: translateX(-50%); background-color: rgba(255, 255, 255, 0.05); box-shadow: 0px 8px 32px 0px rgba(0, 0, 0, 0.37); max-width: 600px; text-align: center;">
             <p id="response-text">Hello! What's on your mind?</p>
         </div>
         
@@ -314,7 +321,7 @@
 
         <div id="input-area">
             <input type="text" id="user-input" placeholder="Ask a question..." autocomplete="off">
-            <button id="send-button">Send</button>
+            <button id="send-button" style="background-color: rgb(0, 122, 255);">Send</button>
         </div>
     </div>
 
@@ -330,7 +337,6 @@
             const sourcesArea = document.getElementById('sources-area');
             const imageDisplayArea = document.getElementById('image-display-area'); 
             const imageLoadingText = document.getElementById('image-loading-text'); 
-            // FIX: Ensure inputArea is defined
             const inputArea = document.getElementById('input-area'); 
 
             // --- STATE & CONSTANTS ---
@@ -546,6 +552,7 @@
                     blob.style.height = FULL_BLOB_HEIGHT;
                     // Apply Centered Jiggle
                     blob.classList.add('jiggling-center');
+                    blob.classList.remove('jiggling-corner');
                     
                     // Button Style
                     sendButton.style.backgroundColor = '#FF4500';
@@ -600,6 +607,7 @@
                     blob.style.transform = 'none'; // Ensure no transform for corner position
                     blob.classList.add('image-mode'); // Class for smaller eyes/mouth
                     // Apply Corner Jiggle
+                    blob.classList.remove('jiggling-center');
                     blob.classList.add('jiggling-corner');
 
                     // Hide response bubble
@@ -649,6 +657,7 @@
                     blob.style.height = FULL_BLOB_HEIGHT;
                     // Apply Centered Jiggle, which includes the translateX(-50%)
                     blob.classList.add('jiggling-center');
+                    blob.classList.remove('jiggling-corner');
 
 
                     // 2. Response Box (Centered horizontally - Moved down to 55%)
@@ -670,7 +679,7 @@
                     responseBubble.style.minHeight = '0';
                     responseBubble.style.textAlign = 'center';
                     
-                    // 3. Input Area (FIXED to bottom, wide and centered)
+                    // 3. Input Area (We rely on CSS defaults, but override position/size for consistency)
                     inputArea.style.top = 'auto'; 
                     inputArea.style.bottom = '20px'; 
                     inputArea.style.right = 'auto'; 
@@ -901,7 +910,7 @@
                  }
             });
 
-            // Initial setup call
+            // Initial setup call - NO LONGER STRICTLY NEEDED FOR INPUT BAR VISIBILITY
             updateUIForMode();
         });
     </script>
