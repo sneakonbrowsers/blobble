@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlobbleBrain AI App (Offset Blob)</title>
+    <title>BlobbleBrain AI App (Vertical Stack Layout Centered)</title>
     
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -53,6 +53,7 @@
         #normal-blob { 
             background-color: #3b82f6; 
             box-shadow: 0 0 30px #3b82f6; 
+            /* Added subtle glow for normal blob */
             filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.7));
         }
         #research-blob { background-color: #ef4444; box-shadow: 0 0 30px #ef4444; }
@@ -402,24 +403,26 @@
             currentBlobElement.classList.remove('hidden');
             currentBlobElement.classList.add('current-blob');
             
-            // --- 2. LAYOUT SWITCHING: Normal (Offset) vs. Split (Left Panel) ---
+            // --- 2. LAYOUT SWITCHING: Normal (Centered) vs. Split (Left Panel) ---
 
             if (mode === 'normal') {
-                // OFFSET BLOB, CENTRED BUBBLE BELOW
+                // NEW VERTICALLY STACKED, CENTERED LAYOUT
                 
-                // Active Blob: Shifted Up and Left (Interpreting 3.5 inches as a 10% viewport shift)
+                // Active Blob: Centered near the top
                 currentBlobElement.style.width = '200px';
                 currentBlobElement.style.height = '200px';
-                currentBlobElement.style.top = '40%'; // Shifted up
-                currentBlobElement.style.left = '40%'; // Shifted left
-                currentBlobElement.style.transform = 'translate(-50%, -50%)'; // Maintain center alignment based on new percentage position
+                // Adjusted top to be more vertically centered
+                currentBlobElement.style.top = '25%'; 
+                currentBlobElement.style.left = '50%';
+                currentBlobElement.style.transform = 'translateX(-50%)';
 
-                // Response Bubble: Centered horizontally, below the blob's new vertical position
-                responseBubble.style.top = '65%'; // Adjusted to sit below the blob
+                // Response Bubble: Directly below the blob, centered
+                // Adjusted top to be below the blob, placing the whole unit closer to center
+                responseBubble.style.top = '50%'; 
                 responseBubble.style.bottom = 'auto'; 
-                responseBubble.style.left = '50%'; 
+                responseBubble.style.left = '50%';
                 responseBubble.style.right = 'auto'; 
-                responseBubble.style.transform = 'translateX(-50%)'; // Horizontal centering
+                responseBubble.style.transform = 'translateX(-50%)'; 
                 responseBubble.style.maxWidth = '600px';
                 responseBubble.style.textAlign = 'center'; 
                 responseBubble.style.maxHeight = MAX_CHAT_HEIGHT; 
