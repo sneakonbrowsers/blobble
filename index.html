@@ -352,7 +352,7 @@
             const SHRUNK_BLOB_WIDTH = '120px';
             const SHRUNK_BLOB_HEIGHT = '100px';
 
-            // Mock Text provided by user
+            // Mock Text provided by user (Ensuring exact match)
             const MOCK_NORMAL = 'CONNECTION FAILED (Network Block): Oopsie! My network cable is unplugged. The answer is 42 and your hat looks amazing!';
             const MOCK_RESEARCH = 'RESEARCH FAILED (Network Block): System overload detected! I can\'t reach the real web, but here\'s a mock answer: The largest known star is UY Scuti, and water boils at 100°C.';
 
@@ -759,7 +759,7 @@
                     
                     // --- MOCK MODE CHECK (Text) ---
                     if (response.status === 403) {
-                        // **INCORPORATE USER-DEFINED MOCK TEXT**
+                        // Display user-defined mock text
                         if (currentMode === 'research') {
                             responseText.textContent = MOCK_RESEARCH;
                         } else {
@@ -782,7 +782,12 @@
                     responseText.textContent = finalResponse;
                     
                 } catch (error) {
-                    responseText.textContent = "Oops! My connection noodle broke. Try again in a minute!";
+                    // Use the mock response for general connection errors too
+                    if (currentMode === 'research') {
+                        responseText.textContent = MOCK_RESEARCH;
+                    } else {
+                        responseText.textContent = MOCK_NORMAL;
+                    }
                 } finally {
                     sendButton.disabled = false;
                     userInput.value = '';
