@@ -126,6 +126,8 @@
             color: #ccc;
             font-size: 1.2em;
             text-align: center;
+            /* --- ADDED BORDER FOR VISIBILITY --- */
+            border: 3px solid #8A2BE2; 
         }
         
         /* Ensure canvas and image fit the display area */
@@ -316,7 +318,8 @@
         <!-- Image Display Area (Image Mode) -->
         <div id="image-display-area">
             <!-- Canvas/Image will be inserted here -->
-            <p id="image-loading-text">Describe the image you want to create!</p>
+            <!-- Note: image-loading-text element will be replaced by the loading spinner or image content -->
+            <p id="image-loading-text">Describe the image you want to create!</p> 
         </div>
 
         <!-- Input Area (Bottom Center) -->
@@ -337,11 +340,10 @@
             const exitImageButton = document.getElementById('exit-image-mode'); 
             const sourcesArea = document.getElementById('sources-area');
             const imageDisplayArea = document.getElementById('image-display-area'); 
-            const imageLoadingText = document.getElementById('image-loading-text'); 
+            let imageLoadingText = document.getElementById('image-loading-text'); // NOTE: This is declared as 'let' and may be overwritten
             const inputArea = document.getElementById('input-area'); 
 
             // --- API KEY CONFIGURATION ---
-            // Your API key has been inserted here!
             const apiKey = "AIzaSyCGQAM_W9iytieFVQAwTXZf6sv5f2Ns5Q8"; 
 
             // --- STATE & CONSTANTS ---
@@ -397,50 +399,61 @@
 
             /**
              * Fallback error function for image generation (used only if a real network/API error occurs).
+             * Renders a custom canvas with the error message.
              */
             function generateErrorImage(prompt) {
-                imageDisplayArea.innerHTML = '';
-                const width = 800;
-                const height = 500;
+                imageDisplayArea.innerHTML = ''; // Clear existing content
+                
+                // Use smaller fixed sizes for safety to ensure it fits the viewport
+                const width = 600; 
+                const height = 400; 
+                
                 const canvas = document.createElement('canvas');
                 canvas.width = width;
                 canvas.height = height;
-                canvas.className = 'w-full h-auto rounded-xl shadow-lg border-4 border-dashed border-red-500';
+                canvas.style.maxWidth = '100%';
+                canvas.style.maxHeight = '100%';
+                canvas.style.borderRadius = '15px';
+                
                 const ctx = canvas.getContext('2d');
 
-                ctx.fillStyle = '#FFEBEE'; 
+                ctx.fillStyle = '#1a1a1a'; // Dark background
                 ctx.fillRect(0, 0, width, height);
                 const centerX = width / 2;
                 const centerY = height / 2;
-
-                ctx.fillStyle = '#EF9A9A'; 
+                
+                // Draw a simple error 'X'
+                ctx.strokeStyle = '#D32F2F'; // Red color
+                ctx.lineWidth = 10;
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, 150, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.strokeStyle = '#D32F2F'; 
-                ctx.lineWidth = 15;
-                ctx.beginPath();
-                ctx.moveTo(centerX - 50, centerY - 50);
-                ctx.lineTo(centerX + 50, centerY + 50);
-                ctx.moveTo(centerX + 50, centerY - 50);
-                ctx.lineTo(centerX - 50, centerY + 50);
+                ctx.moveTo(centerX - 40, centerY - 40);
+                ctx.lineTo(centerX + 40, centerY + 40);
+                ctx.moveTo(centerX + 40, centerY - 40);
+                ctx.lineTo(centerX - 40, centerY + 40);
                 ctx.stroke();
 
+                // Error Header
                 ctx.fillStyle = '#D32F2F';
-                ctx.font = '30px sans-serif'; 
+                ctx.font = '24px sans-serif'; 
                 ctx.textAlign = 'center';
-                ctx.fillText('NETWORK OR API KEY ERROR', centerX, 50);
+                ctx.fillText('API KEY/NETWORK FAILURE', centerX, 60);
 
-                ctx.fillStyle = '#424242';
-                ctx.font = 'italic 20px sans-serif';
+                // Prompt Text
+                ctx.fillStyle = '#ccc';
+                ctx.font = '16px sans-serif';
                 ctx.textAlign = 'center';
-                
-                const errorText = `Could not process prompt: "${prompt}"`;
-                ctx.fillText(errorText, centerX, height - 50);
+                const errorText = `Failed to generate image for: "${prompt}"`;
+                ctx.fillText(errorText, centerX, height - 30);
 
                 imageDisplayArea.appendChild(canvas);
-                imageLoadingText.textContent = `Image generation failed. Check your network or API key.`;
+                
+                // Re-add the loading text element placeholder for consistency
+                if (!imageLoadingText || !document.body.contains(imageLoadingText)) {
+                     imageLoadingText = document.createElement('p');
+                     imageLoadingText.id = 'image-loading-text';
+                     imageDisplayArea.appendChild(imageLoadingText);
+                }
+                imageLoadingText.textContent = `Image generation failed. Check your API key or network connection.`;
                 imageLoadingText.style.display = 'block';
             }
 
@@ -481,9 +494,12 @@
                 
                 // Clear any dynamic image/canvas content
                 imageDisplayArea.innerHTML = ''; 
-                // Restore loading text/instructions
-                imageDisplayArea.appendChild(imageLoadingText);
                 
+                // Re-create and re-cache the instruction text element (safer than relying on old references)
+                imageLoadingText = document.createElement('p');
+                imageLoadingText.id = 'image-loading-text';
+                imageDisplayArea.appendChild(imageLoadingText);
+
                 // Reset common blob attributes
                 blob.classList.remove('image-mode', 'shrunk-mode'); 
                 blob.classList.remove('jiggling-center', 'jiggling-corner'); 
@@ -491,8 +507,9 @@
 
                 if (currentMode === 'research') {
                     // --- RESEARCH MODE (RED) ---
+                    // ... (Research mode UI setup - remains unchanged)
                     
-                    // Blob Style (Top Center) - Start at FULL SIZE
+                    // Blob Style 
                     blob.style.backgroundColor = '#FF4500'; 
                     blob.style.boxShadow = '0 0 20px #FF4500, inset 0 0 10px rgba(255, 255, 255, 0.5)';
                     blob.style.top = '20px'; 
@@ -512,7 +529,7 @@
                     sendButton.onmouseout = () => { if (!sendButton.disabled) sendButton.style.backgroundColor = '#FF4500'; };
                     exitResearchButton.style.display = 'block'; 
 
-                    // Response Box (Large, Central)
+                    // Response Box 
                     responseBubble.style.top = '50%';
                     responseBubble.style.left = '50%';
                     responseBubble.style.right = 'auto'; 
@@ -527,7 +544,7 @@
                     responseBubble.style.backgroundColor = '#333';
                     responseBubble.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5), 0 0 5px rgba(255, 255, 255, 0.1)';
                     
-                    // Input Area (Bottom Right)
+                    // Input Area 
                     inputArea.style.bottom = '20px';
                     inputArea.style.right = '20px';
                     inputArea.style.left = 'auto';
@@ -545,7 +562,7 @@
                 } else if (currentMode === 'image') {
                     // --- IMAGE GENERATION MODE (PURPLE) ---
                     
-                    // Blob Style (Top Left, Smaller)
+                    // Blob Style 
                     blob.style.backgroundColor = '#8A2BE2'; 
                     blob.style.boxShadow = '0 0 20px #8A2BE2, inset 0 0 8px rgba(255, 255, 255, 0.4)';
                     blob.style.top = '10px'; 
@@ -573,6 +590,14 @@
                     // Image Display Area (Centered)
                     imageDisplayArea.style.display = 'flex'; 
                     
+                    // Display current state/instructions (re-uses imageLoadingText element)
+                    if (lastImagePrompt) {
+                        imageLoadingText.textContent = `Current image: "${lastImagePrompt}". Type a new prompt or "regenerate"!`;
+                    } else {
+                         imageLoadingText.textContent = 'Describe the image you want to create!';
+                    }
+                    imageLoadingText.style.display = 'block'; // Ensure the instructions are visible
+                    
                     // Input Area (Bottom Right)
                     inputArea.style.bottom = '20px';
                     inputArea.style.right = '20px';
@@ -582,20 +607,12 @@
                     inputArea.style.maxWidth = '350px';
                     inputArea.style.marginLeft = '0'; 
                     inputArea.style.top = 'auto'; 
-                    
-                    // If we have a last prompt, try to show the previously generated content
-                    if (lastImagePrompt) {
-                        imageLoadingText.textContent = `Current image: "${lastImagePrompt}". Type a new prompt or "regenerate"!`;
-                        imageLoadingText.style.display = 'block';
-                    } else {
-                         imageLoadingText.textContent = 'Describe the image you want to create!';
-                         imageLoadingText.style.display = 'block';
-                    }
 
                 } else {
                     // --- NORMAL MODE (CLEAN BLUE) ---
+                    // ... (Normal mode UI setup - remains unchanged)
                     
-                    // 1. Blob Style (Centered high up - 30% from top)
+                    // 1. Blob Style
                     blob.style.backgroundColor = '#007AFF'; 
                     blob.style.boxShadow = '0 0 25px rgba(0, 122, 255, 0.8), inset 0 0 12px rgba(255, 255, 255, 0.6)';
                     blob.style.top = '30%'; 
@@ -610,7 +627,7 @@
                     blob.classList.remove('jiggling-corner');
 
 
-                    // 2. Response Box (Centered horizontally - Moved down to 55%)
+                    // 2. Response Box
                     responseBubble.style.display = 'block';
                     responseBubble.style.top = '55%'; 
                     responseBubble.style.left = '50%'; 
@@ -626,7 +643,7 @@
                     responseBubble.style.minHeight = '0';
                     responseBubble.style.textAlign = 'center';
                     
-                    // 3. Input Area (We rely on CSS defaults, but override position/size for consistency)
+                    // 3. Input Area
                     inputArea.style.top = 'auto'; 
                     inputArea.style.bottom = '20px'; 
                     inputArea.style.right = 'auto'; 
@@ -776,7 +793,9 @@
                 
                 // UI updates for generating
                 sendButton.disabled = true;
-                imageDisplayArea.innerHTML = '<div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);" class="text-center p-12"><div class="animate-spin rounded-full h-12 w-12 border-b-4 border-indigo-500 mx-auto"></div><p class="mt-4 text-white">Requesting Image from Gemini...</p></div>';
+                
+                // --- UPDATED LOADING MESSAGE ---
+                imageDisplayArea.innerHTML = '<div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);" class="text-center p-12"><div class="animate-spin rounded-full h-12 w-12 border-b-4 border-indigo-500 mx-auto"></div><p class="mt-4 text-white">Making your image come to life!</p></div>';
 
 
                 try {
@@ -807,6 +826,13 @@
                         
                         imageDisplayArea.innerHTML = '';
                         imageDisplayArea.appendChild(img);
+                        
+                        // Re-add the loading text element placeholder for consistency
+                        if (!imageLoadingText || !document.body.contains(imageLoadingText)) {
+                             imageLoadingText = document.createElement('p');
+                             imageLoadingText.id = 'image-loading-text';
+                             imageDisplayArea.appendChild(imageLoadingText);
+                        }
                         imageLoadingText.textContent = `Current image: "${imagePrompt}". Type a new prompt or "regenerate"!`;
                         imageLoadingText.style.display = 'block';
 
