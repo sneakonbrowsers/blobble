@@ -340,10 +340,13 @@
             const imageLoadingText = document.getElementById('image-loading-text'); 
             const inputArea = document.getElementById('input-area'); 
 
+            // --- API KEY CONFIGURATION ---
+            // Your API key has been inserted here!
+            const apiKey = "AIzaSyCGQAM_W9iytieFVQAwTXZf6sv5f2Ns5Q8"; 
+
             // --- STATE & CONSTANTS ---
             let currentMode = 'normal'; // 'normal', 'research', 'image'
             const MAX_CHARS = 100;
-            const apiKey = ""; 
             let lastImagePrompt = ''; 
 
             // Blob Size Constants
@@ -351,11 +354,6 @@
             const FULL_BLOB_HEIGHT = '180px';
             const SHRUNK_BLOB_WIDTH = '120px';
             const SHRUNK_BLOB_HEIGHT = '100px';
-
-            // Mock Text provided by user (Ensuring exact match)
-            const MOCK_NORMAL = 'CONNECTION FAILED (Network Block): Oopsie! My network cable is unplugged. The answer is 42 and your hat looks amazing!';
-            const MOCK_RESEARCH = 'RESEARCH FAILED (Network Block): System overload detected! I can\'t reach the real web, but here\'s a mock answer: The largest known star is UY Scuti, and water boils at 100°C.';
-
 
             // Text Model Configuration
             const textModel = "gemini-2.5-flash-preview-09-2025";
@@ -379,12 +377,9 @@
                 for (let i = 0; i < maxRetries; i++) {
                     try {
                         const response = await fetch(url, options);
-                        // If we get a 403 (Network Block), return the response immediately.
-                        if (response.status === 403) {
-                            return response;
-                        }
+                        
                         if (!response.ok && response.status !== 429) {
-                            // Throw an error for non-403, non-429 HTTP errors (like 500)
+                            // Throw an error for non-429 HTTP errors (like 500 or real 403)
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         if (response.status === 429) {
@@ -400,42 +395,30 @@
                 throw new Error(`Failed to fetch after ${maxRetries} attempts: ${lastError.message}`);
             }
 
-            // --- Mock Mode Function (Fallback) ---
-
             /**
-             * Generates a canvas drawing as a visual placeholder when the network is blocked.
-             * This simulates a successful image generation result.
-             * @param {string} prompt The original prompt text.
+             * Fallback error function for image generation (used only if a real network/API error occurs).
              */
-            function generateMockImage(prompt) {
-                // Clear the container first
+            function generateErrorImage(prompt) {
                 imageDisplayArea.innerHTML = '';
-                
                 const width = 800;
                 const height = 500;
                 const canvas = document.createElement('canvas');
                 canvas.width = width;
                 canvas.height = height;
-                // Use a class to style the canvas within the container
                 canvas.className = 'w-full h-auto rounded-xl shadow-lg border-4 border-dashed border-red-500';
                 const ctx = canvas.getContext('2d');
 
-                // Clear and set background
-                ctx.fillStyle = '#FFEBEE'; // Light red/pink to signify error/mock
+                ctx.fillStyle = '#FFEBEE'; 
                 ctx.fillRect(0, 0, width, height);
-
-                // Draw a central graphic
                 const centerX = width / 2;
                 const centerY = height / 2;
 
-                // Draw a large, mock-up shape
-                ctx.fillStyle = '#EF9A9A'; // Muted red
+                ctx.fillStyle = '#EF9A9A'; 
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, 150, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Draw an 'X' to signify the block
-                ctx.strokeStyle = '#D32F2F'; // Dark red
+                ctx.strokeStyle = '#D32F2F'; 
                 ctx.lineWidth = 15;
                 ctx.beginPath();
                 ctx.moveTo(centerX - 50, centerY - 50);
@@ -444,41 +427,20 @@
                 ctx.lineTo(centerX - 50, centerY + 50);
                 ctx.stroke();
 
-                // Add the Mock Message (User requested text)
                 ctx.fillStyle = '#D32F2F';
                 ctx.font = '30px sans-serif'; 
                 ctx.textAlign = 'center';
-                ctx.fillText('NETWORK BLOCK: MOCK IMAGE GENERATED', centerX, 50);
+                ctx.fillText('NETWORK OR API KEY ERROR', centerX, 50);
 
-                // Add the prompt text (User requested text format)
                 ctx.fillStyle = '#424242';
                 ctx.font = 'italic 20px sans-serif';
                 ctx.textAlign = 'center';
+                
+                const errorText = `Could not process prompt: "${prompt}"`;
+                ctx.fillText(errorText, centerX, height - 50);
 
-                const mockPrompt = `Mocking prompt: "${prompt}"`;
-                // Split text if too long
-                const textLines = [];
-                let currentLine = '';
-                mockPrompt.split(' ').forEach(word => {
-                    const testLine = currentLine + word + ' ';
-                    if (ctx.measureText(testLine).width > width - 100 && currentLine !== '') {
-                        textLines.push(currentLine.trim());
-                        currentLine = word + ' ';
-                    } else {
-                        currentLine = testLine;
-                    }
-                });
-                textLines.push(currentLine.trim());
-
-                let textY = height - 100;
-                textLines.reverse().forEach(line => {
-                    ctx.fillText(line, centerX, textY);
-                    textY -= 25; // Line height
-                });
-
-                // Update UI
                 imageDisplayArea.appendChild(canvas);
-                imageLoadingText.textContent = `Current image: "${prompt}". Type a new prompt or "regenerate"!`;
+                imageLoadingText.textContent = `Image generation failed. Check your network or API key.`;
                 imageLoadingText.style.display = 'block';
             }
 
@@ -621,11 +583,10 @@
                     inputArea.style.marginLeft = '0'; 
                     inputArea.style.top = 'auto'; 
                     
-                    // If we have a last prompt, show the mock image for context
+                    // If we have a last prompt, try to show the previously generated content
                     if (lastImagePrompt) {
-                        // We generate the mock image here explicitly to ensure visibility
-                        // if the user switches modes back and forth.
-                        generateMockImage(lastImagePrompt);
+                        imageLoadingText.textContent = `Current image: "${lastImagePrompt}". Type a new prompt or "regenerate"!`;
+                        imageLoadingText.style.display = 'block';
                     } else {
                          imageLoadingText.textContent = 'Describe the image you want to create!';
                          imageLoadingText.style.display = 'block';
@@ -736,10 +697,10 @@
                 if (currentMode === 'research') {
                     systemInstruction = 'You are a professional research assistant. Provide detailed, factual, and comprehensive responses to the user\'s queries based on the provided search results. Do not use conversational fillers or exceed 2000 characters. Crucially, do not use any markdown formatting symbols, such as hashtags (#) or asterisks (*), in your response.';
                     tools = [{ "google_search": {} }]; 
-                    responseText.textContent = `...thinking in Research Mode...`;
+                    responseText.textContent = `...searching the web in Research Mode...`;
                 } else { // Normal Mode
                     systemInstruction = 'You are BlobbleBrain, a playful AI module designed for fun, silly, and concise responses. Your absolute limit is 100 characters, including spaces and punctuation. You must always stay within this limit and be entertaining.';
-                    responseText.textContent = `...thinking in Normal Mode...`;
+                    responseText.textContent = `...blobbling...`;
                 }
                 
                 const payload = {
@@ -757,18 +718,6 @@
                         body: JSON.stringify(payload)
                     });
                     
-                    // --- MOCK MODE CHECK (Text) ---
-                    if (response.status === 403) {
-                        // Display user-defined mock text
-                        if (currentMode === 'research') {
-                            responseText.textContent = MOCK_RESEARCH;
-                        } else {
-                            responseText.textContent = MOCK_NORMAL;
-                        }
-                        return; // Exit here, mock response is displayed
-                    }
-                    // --- End MOCK MODE CHECK (Text) ---
-                    
                     const result = await response.json();
                     
                     const candidate = result.candidates?.[0];
@@ -777,17 +726,36 @@
                     if (candidate && candidate.content?.parts?.[0]?.text) {
                         aiText = candidate.content.parts[0].text;
                     }
+
+                    // Extract sources if available
+                    let sources = [];
+                    const groundingMetadata = candidate.groundingMetadata;
+                    if (currentMode === 'research' && groundingMetadata && groundingMetadata.groundingAttributions) {
+                         sources = groundingMetadata.groundingAttributions
+                            .map(attribution => ({
+                                uri: attribution.web?.uri,
+                                title: attribution.web?.title,
+                            }))
+                            .filter(source => source.uri && source.title); 
+                            
+                        if (sources.length > 0) {
+                            sourcesArea.innerHTML = '<strong>Sources:</strong><ul>' + sources.map(s => 
+                                `<li><a href="${s.uri}" target="_blank" style="color: lightblue; text-decoration: none;">${s.title}</a></li>`
+                            ).join('') + '</ul>';
+                            sourcesArea.style.display = 'block';
+                            sourcesArea.style.top = `${responseBubble.offsetTop + responseBubble.offsetHeight + 20}px`;
+                            sourcesArea.style.left = `${responseBubble.offsetLeft}px`;
+                        } else {
+                            sourcesArea.style.display = 'none';
+                        }
+                    }
                     
                     const finalResponse = currentMode === 'research' ? aiText : aiText.substring(0, MAX_CHARS);
                     responseText.textContent = finalResponse;
                     
                 } catch (error) {
-                    // Use the mock response for general connection errors too
-                    if (currentMode === 'research') {
-                        responseText.textContent = MOCK_RESEARCH;
-                    } else {
-                        responseText.textContent = MOCK_NORMAL;
-                    }
+                    // Generic error handling now that the mock force is removed
+                    responseText.textContent = `Connection Error: I couldn't reach the API. Please check your network and ensure your API key is correct. Error: ${error.message}`;
                 } finally {
                     sendButton.disabled = false;
                     userInput.value = '';
@@ -823,15 +791,6 @@
                         body: JSON.stringify(payload)
                     });
                     
-                    // --- MOCK MODE CHECK (Image) ---
-                    if (response.status === 403) {
-                        // This calls the function that draws the canvas with the specific mock text.
-                        generateMockImage(imagePrompt); 
-                        return; 
-                    }
-                    // --- End MOCK MODE CHECK (Image) ---
-
-                    // Normal successful response processing (will not be hit due to block)
                     const result = await response.json();
                     
                     let base64Data = null;
@@ -856,8 +815,8 @@
                     }
 
                 } catch (error) {
-                    // Use mock image for all API errors/timeouts as well
-                    generateMockImage(imagePrompt);
+                    // Fallback to error image if generation fails
+                    generateErrorImage(imagePrompt);
                 } finally {
                     sendButton.disabled = false;
                     userInput.value = '';
