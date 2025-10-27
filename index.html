@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blobble AI</title>
+    <title>BlobbleBrain Multi-Mode AI Client</title>
     
     <style>
         /* CSS STYLING */
@@ -100,6 +100,15 @@
             font-size: 1.1em;
             transition: all 0.5s;
             text-align: center; /* Default center align for normal mode */
+        }
+
+        /* Styling for the error element inside the bubble */
+        #raw-error {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.8em;
+            color: #ffcccc; /* Light red text for emphasis */
+            font-weight: bold;
         }
 
         /* 4. Sources Area (Research Mode only) */
@@ -300,6 +309,7 @@
 
         <div id="response-bubble">
             <p id="response-text">Hello! What's on your mind?</p>
+            <p id="raw-error" style="display: none;"></p>
         </div>
         
         
@@ -325,6 +335,7 @@
             const userInput = document.getElementById('user-input');
             const sendButton = document.getElementById('send-button');
             const responseText = document.getElementById('response-text');
+            const rawErrorDisplay = document.getElementById('raw-error');
             const responseBubble = document.getElementById('response-bubble');
             const blob = document.getElementById('blobblebrain');
             const exitResearchButton = document.getElementById('exit-research-mode');
@@ -349,11 +360,14 @@
 
             // Text Model Configuration
             const textModel = "gemini-2.5-flash-preview-09-2025";
-            const textApiUrl = apiKey
-                ? `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${apiKey}`
-                : `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent`;
+            // Check if __gemini_api_url is available from the environment, otherwise construct it
+            const textApiUrl = (typeof __gemini_api_url !== 'undefined' && __gemini_api_url) 
+                ? __gemini_api_url 
+                : (apiKey 
+                    ? `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${apiKey}`
+                    : `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent`);
 
-            // Image Model Configuration (Switching to flash-image-preview to resolve 403 error)
+            // Image Model Configuration (Using flash-image-preview)
             const imageModel = "gemini-2.5-flash-image-preview";
             const imageApiUrl = apiKey 
                 ? `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:generateContent?key=${apiKey}`
@@ -405,6 +419,7 @@
                 imageDisplayArea.style.display = 'none';
                 generatedImage.style.display = 'none';
                 imageLoadingText.style.display = 'none';
+                rawErrorDisplay.style.display = 'none'; // Hide raw error on mode switch
                 
                 // Reset common blob attributes
                 blob.classList.remove('image-mode', 'shrunk-mode'); // Clear all size/face modifiers
@@ -591,13 +606,8 @@
                         }
 
                         if (!response.ok) {
-                            // *** CRITICAL ERROR LOGGING FOR DEBUGGING ***
-                            if (response.status === 401 || response.status === 403) {
-                                console.error(`[FATAL API ERROR ${response.status}] Authentication Failure. The API key might be missing, invalid, or lacking permission for the requested model (${url.split('/').pop().split('?')[0]}).`);
-                            }
-                            // *** END CRITICAL LOGGING ***
-                            
-                            throw new Error("HTTP error! status: " + response.status);
+                            // Throw error including status code for catch block to handle
+                            throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         return response.json();
                     } catch (error) {
@@ -632,6 +642,7 @@
                 sendButton.disabled = true;
                 sourcesArea.innerHTML = ''; 
                 generatedImage.style.display = 'none';
+                rawErrorDisplay.style.display = 'none'; // Hide previous error
 
                 if (currentMode === 'image') {
                     const cleanPrompt = userInput.value.trim().toLowerCase();
@@ -672,7 +683,6 @@
                 };
 
                 try {
-                    // Uses the new textApiUrl constant
                     const result = await fetchWithRetry(textApiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -696,7 +706,17 @@
                     
                 } catch (error) {
                     console.error("Gemini API Error:", error);
-                    // This is the user-facing message
+                    // Check if the error is an HTTP status error
+                    const match = error.message.match(/HTTP error! status: (\d+)/);
+                    if (match) {
+                        const statusCode = match[1];
+                        rawErrorDisplay.textContent = `Error: API status ${statusCode}. Check permissions!`;
+                        rawErrorDisplay.style.display = 'block';
+                    } else {
+                        rawErrorDisplay.textContent = `Unknown Error: ${error.message}`;
+                        rawErrorDisplay.style.display = 'block';
+                    }
+                    // User-facing message
                     responseText.textContent = "Oops! My connection noodle broke. Try again in a minute!";
                 } finally {
                     sendButton.disabled = false;
