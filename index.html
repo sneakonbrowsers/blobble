@@ -3,44 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlobbleBrain Multi-Mode AI Client</title>
+    <title>Blobble AI</title>
     
     <style>
         /* CSS STYLING */
         
-        /* Box sizing fix to prevent elements from being pushed out of the viewport */
-        * {
-            box-sizing: border-box;
-        }
-        
-        /* CRITICAL FIX: Ensure body and html take up full viewport height */
-        html, body {
-            height: 100%;
-            margin: 0;
-            overflow: hidden; /* Prevent body scroll, let inner elements scroll if needed */
-        }
-
         /* General Setup for Full Viewport Layout */
         body {
             background-color: black; 
+            position: relative; 
+            height: 100vh; 
+            margin: 0;
             font-family: sans-serif;
             color: white;
+            overflow: hidden; 
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* CRITICAL FIX: Anchor the app container to the full viewport */
         #app {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: relative;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            /* Container for centered elements in Normal Mode */
         }
 
         /* --- Positioning Elements - Default (Research Mode) Styles --- */
@@ -72,7 +62,7 @@
             border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
-            z-index: 30; 
+            z-index: 20; 
             display: none; /* Hidden by default */
             transition: background-color 0.2s;
         }
@@ -95,20 +85,13 @@
         #response-bubble {
             position: absolute;
             padding: 25px;
+            /* background-color handled by JS for clean mode */
             border-radius: 20px;
             overflow-y: auto; 
             font-size: 1.1em;
+            /* Shadow handled by JS for clean mode */
             transition: all 0.5s;
             text-align: center; /* Default center align for normal mode */
-        }
-
-        /* Styling for the error element inside the bubble */
-        #raw-error {
-            display: block;
-            margin-top: 10px;
-            font-size: 0.8em;
-            color: #ffcccc; /* Light red text for emphasis */
-            font-weight: bold;
         }
 
         /* 4. Sources Area (Research Mode only) */
@@ -120,6 +103,7 @@
             padding: 15px;
             border-radius: 10px;
             font-size: 0.9em;
+            /* Hiding it by default in CSS as well */
             display: none; 
         }
 
@@ -144,31 +128,36 @@
             font-size: 1.2em;
             text-align: center;
         }
-
-        #generated-image {
+        
+        /* Ensure canvas and image fit the display area */
+        #image-display-area > * {
             max-width: 100%;
             max-height: 100%;
-            display: block; 
-            object-fit: contain; 
+            display: block;
+            object-fit: contain;
             border-radius: 15px;
         }
-        
+
+        #generated-image {
+            display:none; /* Hide by default */
+        }
+
         /* 6. Input Area - FIXED TO BOTTOM FOR CLEAN MODE */
         #input-area {
             position: absolute;
             display: flex;
             gap: 10px;
-            z-index: 20; 
+            z-index: 15;
             transition: all 0.5s;
-            padding: 10px 0; 
-            margin-bottom: 20px; /* Added margin to push it up slightly from the edge */
+            padding: 10px 0; /* Padding for the fixed bottom bar look */
         }
 
         #user-input {
             flex-grow: 1;
             padding: 10px 15px;
+            /* New clean look for input */
             border: 1px solid #333;
-            border-radius: 50px; 
+            border-radius: 50px; /* Fully rounded pill shape */
             background-color: #1a1a1a; 
             color: white;
             font-size: 1em;
@@ -178,15 +167,15 @@
         }
 
         #user-input:focus {
-            border-color: #007AFF; 
-            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.6); 
+            border-color: #007AFF; /* Blue focus border */
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.6); /* Blue outer glow on focus */
         }
 
         #send-button {
             padding: 10px 20px;
             color: white;
             border: none;
-            border-radius: 50px; 
+            border-radius: 50px; /* Fully rounded pill shape */
             cursor: pointer;
             font-weight: bold;
             transition: background-color 0.2s;
@@ -309,8 +298,6 @@
 
         <div id="response-bubble">
             <p id="response-text">Hello! What's on your mind?</p>
-            <!-- Hiding raw-error from the user but keeping it in the DOM for dev reference if needed -->
-            <p id="raw-error" style="display: none;"></p>
         </div>
         
         
@@ -321,7 +308,7 @@
         
 
 <div id="image-display-area">
-            <img id="generated-image" src="" alt="Generated image will appear here" style="display:none;">
+            <!-- Canvas/Image will be inserted here -->
             <p id="image-loading-text">Describe the image you want to create!</p>
         </div>
 
@@ -336,21 +323,20 @@
             const userInput = document.getElementById('user-input');
             const sendButton = document.getElementById('send-button');
             const responseText = document.getElementById('response-text');
-            const rawErrorDisplay = document.getElementById('raw-error');
             const responseBubble = document.getElementById('response-bubble');
             const blob = document.getElementById('blobblebrain');
             const exitResearchButton = document.getElementById('exit-research-mode');
             const exitImageButton = document.getElementById('exit-image-mode'); 
             const sourcesArea = document.getElementById('sources-area');
             const imageDisplayArea = document.getElementById('image-display-area'); 
-            const generatedImage = document.getElementById('generated-image'); 
             const imageLoadingText = document.getElementById('image-loading-text'); 
-            const inputArea = document.getElementById('input-area');
+            // FIX: Ensure inputArea is defined
+            const inputArea = document.getElementById('input-area'); 
 
             // --- STATE & CONSTANTS ---
             let currentMode = 'normal'; // 'normal', 'research', 'image'
             const MAX_CHARS = 100;
-            const apiKey = ""; // MANDATORY: This remains empty for environment injection
+            const apiKey = ""; 
             let lastImagePrompt = ''; // Store the last valid image prompt
 
             // Blob Size Constants
@@ -359,13 +345,136 @@
             const SHRUNK_BLOB_WIDTH = '120px';
             const SHRUNK_BLOB_HEIGHT = '100px';
 
-            // --- API MODELS & URLS (Reverting to reliable, modern standards) ---
-            const textModel = "gemini-2.5-flash"; 
-            const textApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${apiKey}`;
-            const imageModel = "imagen-generate-002"; // Standard model for image gen
-            const imageApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:predict?key=${apiKey}`;
+            // Text Model Configuration
+            const textModel = "gemini-2.5-flash-preview-09-2025";
+            const textApiUrl = apiKey
+                ? `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${apiKey}`
+                : `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent`;
+
+            // Image Model Configuration (using the recommended model)
+            const imageModel = "imagen-3.0-generate-002";
+            const imageApiUrl = apiKey 
+                ? `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:predict?key=${apiKey}`
+                : `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:predict`;
             
-            
+            // --- Utility Functions ---
+
+            /**
+             * Exponential Backoff Retry mechanism for API calls.
+             * Returns the raw Response object to allow checking the status (e.g., 403).
+             */
+            async function fetchWithRetry(url, options, maxRetries = 5) {
+                let lastError = null;
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        const response = await fetch(url, options);
+                        // If we get a 403 (Network Block), return the response immediately.
+                        if (response.status === 403) {
+                            return response;
+                        }
+                        if (!response.ok && response.status !== 429) {
+                            // Throw an error for non-403, non-429 HTTP errors (like 500)
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        // For OK responses and 429 (which we will handle by retrying below), return the response.
+                        if (response.status === 429) {
+                             throw new Error(`Rate limit exceeded (429)`);
+                        }
+                        return response;
+                    } catch (error) {
+                        lastError = error;
+                        const delay = Math.pow(2, i) * 1000;
+                        console.warn(`Request failed (${error.message}). Retrying in ${delay / 1000}s...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+                throw new Error(`Failed to fetch after ${maxRetries} attempts: ${lastError.message}`);
+            }
+
+            // --- Mock Mode Function (Fallback) ---
+
+            /**
+             * Generates a canvas drawing as a visual placeholder when the network is blocked.
+             * This simulates a successful image generation result.
+             * @param {string} prompt The original prompt text.
+             */
+            function generateMockImage(prompt) {
+                // Clear the container first
+                imageDisplayArea.innerHTML = '';
+                
+                const width = 800;
+                const height = 500;
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                // Use a class to style the canvas within the container
+                canvas.className = 'w-full h-auto rounded-xl shadow-lg border-4 border-dashed border-red-500';
+                const ctx = canvas.getContext('2d');
+
+                // Clear and set background
+                ctx.fillStyle = '#FFEBEE'; // Light red/pink to signify error/mock
+                ctx.fillRect(0, 0, width, height);
+
+                // Draw a central graphic
+                const centerX = width / 2;
+                const centerY = height / 2;
+
+                // Draw a large, mock-up shape
+                ctx.fillStyle = '#EF9A9A'; // Muted red
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 150, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw an 'X' to signify the block
+                ctx.strokeStyle = '#D32F2F'; // Dark red
+                ctx.lineWidth = 15;
+                ctx.beginPath();
+                ctx.moveTo(centerX - 50, centerY - 50);
+                ctx.lineTo(centerX + 50, centerY + 50);
+                ctx.moveTo(centerX + 50, centerY - 50);
+                ctx.lineTo(centerX - 50, centerY + 50);
+                ctx.stroke();
+
+                // Add the Mock Message
+                ctx.fillStyle = '#D32F2F';
+                ctx.font = '30px sans-serif'; // Using sans-serif as 'Inter' isn't guaranteed here
+                ctx.textAlign = 'center';
+                ctx.fillText('NETWORK BLOCK: MOCK IMAGE GENERATED', centerX, 50);
+
+                // Add the prompt text
+                ctx.fillStyle = '#424242';
+                ctx.font = 'italic 20px sans-serif';
+                ctx.textAlign = 'center';
+
+                const mockPrompt = `Mocking prompt: "${prompt}"`;
+                // Split text if too long
+                const textLines = [];
+                let currentLine = '';
+                mockPrompt.split(' ').forEach(word => {
+                    const testLine = currentLine + word + ' ';
+                    // Measure text logic is simplified, assumes a rough max width
+                    if (ctx.measureText(testLine).width > width - 100 && currentLine !== '') {
+                        textLines.push(currentLine.trim());
+                        currentLine = word + ' ';
+                    } else {
+                        currentLine = testLine;
+                    }
+                });
+                textLines.push(currentLine.trim());
+
+                let textY = height - 100;
+                textLines.reverse().forEach(line => {
+                    ctx.fillText(line, centerX, textY);
+                    textY -= 25; // Line height
+                });
+
+                // Update UI
+                imageDisplayArea.appendChild(canvas);
+                imageLoadingText.textContent = `Current image: "${prompt}". Type a new prompt or "regenerate"!`;
+                imageLoadingText.style.display = 'block';
+            }
+
+
             /**
              * Checks for overlap between the Research Blob and the Response Bubble 
              * and adjusts the blob's size accordingly.
@@ -409,9 +518,11 @@
                 sourcesArea.style.display = 'none';
                 responseBubble.style.display = 'block'; 
                 imageDisplayArea.style.display = 'none';
-                generatedImage.style.display = 'none';
-                imageLoadingText.style.display = 'none';
-                rawErrorDisplay.style.display = 'none'; // Hide raw error on mode switch
+                
+                // Clear any dynamic image/canvas content
+                imageDisplayArea.innerHTML = ''; 
+                // Restore loading text/instructions
+                imageDisplayArea.appendChild(imageLoadingText);
                 
                 // Reset common blob attributes
                 blob.classList.remove('image-mode', 'shrunk-mode'); // Clear all size/face modifiers
@@ -515,12 +626,12 @@
                     
                     // Display current image prompt or instructions
                     if (lastImagePrompt) {
-                        imageLoadingText.textContent = `Current image: "${lastImagePrompt}". Type a new prompt or "regenerate"!`;
-                        generatedImage.style.display = 'block'; // Show last image if available
+                        // Re-trigger mock generation on mode switch to ensure canvas is drawn
+                        generateMockImage(lastImagePrompt);
                     } else {
                          imageLoadingText.textContent = 'Describe the image you want to create!';
+                         imageLoadingText.style.display = 'block';
                     }
-
 
                 } else {
                     // --- NORMAL MODE (CLEAN BLUE) ---
@@ -584,33 +695,6 @@
                 updateUIForMode();
             };
 
-            // --- Utility for API Calls with Exponential Backoff ---
-            async function fetchWithRetry(url, options, retries = 5) {
-                for (let i = 0; i < retries; i++) {
-                    try {
-                        const response = await fetch(url, options);
-                        
-                        // Handle rate limiting with backoff
-                        if (response.status === 429 && i < retries - 1) {
-                            const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            continue;
-                        }
-
-                        if (!response.ok) {
-                            // Throw error including status code for catch block to handle
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    } catch (error) {
-                        if (i === retries - 1) {
-                            throw error;
-                        }
-                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                    }
-                }
-            }
             
             // --- Function to call the Gemini API for text ---
             const getAIResponse = async (prompt) => {
@@ -633,12 +717,10 @@
 
                 sendButton.disabled = true;
                 sourcesArea.innerHTML = ''; 
-                generatedImage.style.display = 'none';
-                rawErrorDisplay.style.display = 'none'; // Hide previous error
-                
+
                 if (currentMode === 'image') {
                     const cleanPrompt = userInput.value.trim().toLowerCase();
-                    if (cleanPrompt === 'regenerate') {
+                    if (cleanPrompt.includes('regenerate')) { // Check for 'regenerate' keyword
                         if (lastImagePrompt) {
                             getGeneratedImage(lastImagePrompt, true); // Pass true for regenerate
                         } else {
@@ -647,7 +729,7 @@
                             userInput.value = '';
                         }
                     } else {
-                        // Store new image prompt only if it's not a trigger word
+                        // Extract prompt by removing trigger words and store
                         lastImagePrompt = prompt.replace(imageRegex, '').trim(); 
                         getGeneratedImage(lastImagePrompt); 
                     }
@@ -675,12 +757,26 @@
                 };
 
                 try {
-                    const result = await fetchWithRetry(textApiUrl, {
+                    const response = await fetchWithRetry(textApiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-
+                    
+                    // --- MOCK MODE CHECK (Text) ---
+                    if (response.status === 403) {
+                        console.error("403 Network Block Detected for Text. Switching to Mock Mode.");
+                         if (currentMode === 'research') {
+                            responseText.textContent = 'RESEARCH FAILED (Network Block): System overload detected! I can\'t reach the real web, but here\'s a mock answer: The largest known star is UY Scuti, and water boils at 100°C.';
+                        } else {
+                            responseText.textContent = 'CONNECTION FAILED (Network Block): Oopsie! My network cable is unplugged. The answer is 42 and your hat looks amazing!';
+                        }
+                        return; // Exit here, mock response is displayed
+                    }
+                    // --- End MOCK MODE CHECK (Text) ---
+                    
+                    const result = await response.json();
+                    
                     const candidate = result.candidates?.[0];
                     let aiText = "Oops! I lost my train of thought. Try asking something else!"; 
                     
@@ -688,30 +784,15 @@
                         aiText = candidate.content.parts[0].text;
                     }
                     
-                    // Note: We are ignoring actual sources due to display constraints, but the model used them.
+                    // Note: We don't display sources in this clean UI
                     
                     const finalResponse = currentMode === 'research' ? aiText : aiText.substring(0, MAX_CHARS);
                     responseText.textContent = finalResponse;
                     
                 } catch (error) {
                     console.error("Gemini API Error:", error);
-                    const match = error.message.match(/HTTP error! status: (\d+)/);
-                    const statusCode = match ? match[1] : null;
-
-                    // *** CRITICAL MOCKING LOGIC HERE ***
-                    if (statusCode === '403') {
-                        // MOCK SUCCESS: If we hit a permissions error, give a mock, functional-sounding response
-                        responseText.textContent = (currentMode === 'research') 
-                            ? "RESEARCH FAILED (Network Block): System overload detected! I can't reach the real web, but here's a mock answer: The largest known star is UY Scuti, and water boils at 100°C."
-                            : "CONNECTION FAILED (Network Block): Oopsie! My network cable is unplugged. The answer is 42 and your hat looks amazing!";
-                    } else {
-                        // Handle other non-403 errors
-                        rawErrorDisplay.textContent = `Unknown Error: ${error.message}`;
-                        rawErrorDisplay.style.display = 'none'; // KEEP HIDDEN
-                        responseText.textContent = "Oops! My connection noodle broke. Try again in a minute!";
-                    }
-                    // *** END MOCKING LOGIC ***
-
+                    // Use a general mock error if it wasn't a 403 (e.g., timeout, 500)
+                    responseText.textContent = "Oops! My connection noodle broke. Try again in a minute!";
                 } finally {
                     sendButton.disabled = false;
                     userInput.value = '';
@@ -731,67 +812,62 @@
                     return;
                 }
                 
-                if (isRegenerate) {
-                    imageLoadingText.textContent = `Regenerating "${imagePrompt}"... This might take a moment!`;
-                } else {
-                    imageLoadingText.textContent = `Generating "${imagePrompt}"... This might take a moment!`;
-                }
-                generatedImage.style.display = 'none'; // Hide previous image
-                imageLoadingText.style.display = 'block';
-                
-                try {
-                    // *** PAYLOAD for imagen-generate-002 (predict endpoint) ***
-                    const payload = { 
-                        instances: [{ prompt: imagePrompt }], 
-                        parameters: { "sampleCount": 1 } 
-                    };
-                    // *** END PAYLOAD ***
+                // UI updates for generating
+                sendButton.disabled = true;
+                imageDisplayArea.innerHTML = '<div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);" class="text-center p-12"><div class="animate-spin rounded-full h-12 w-12 border-b-4 border-indigo-500 mx-auto"></div><p class="mt-4 text-white">Requesting Image from Gemini...</p></div>';
 
-                    const result = await fetchWithRetry(imageApiUrl, {
+
+                try {
+                    const payload = {
+                        instances: [{ prompt: imagePrompt }],
+                        parameters: { "sampleCount": 1 }
+                    };
+
+                    const response = await fetchWithRetry(imageApiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
+                    
+                    // --- MOCK MODE CHECK (Image) ---
+                    if (response.status === 403) {
+                        console.error("403 Network Block Detected for Image. Switching to Mock Mode.");
+                        generateMockImage(imagePrompt);
+                        return; // Exit here, mock image is displayed
+                    }
+                    // --- End MOCK MODE CHECK (Image) ---
 
-                    // *** RESPONSE PARSING for imagen-generate-002 ***
-                    const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
-                    // *** END RESPONSE PARSING ***
-
+                    // Normal successful response processing (will not be hit due to block)
+                    const result = await response.json();
+                    
+                    let base64Data = null;
+                    if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                        base64Data = result.predictions[0].bytesBase64Encoded;
+                    }
+                    
                     if (base64Data) {
-                        generatedImage.src = `data:image/png;base64,${base64Data}`;
-                        generatedImage.alt = imagePrompt;
-                        generatedImage.style.display = 'block';
-                        imageLoadingText.style.display = 'none';
+                        const imageUrl = `data:image/png;base64,${base64Data}`;
+                        
+                        const img = document.createElement('img');
+                        img.src = imageUrl;
+                        img.alt = imagePrompt;
+                        
+                        imageDisplayArea.innerHTML = '';
+                        imageDisplayArea.appendChild(img);
+                        imageLoadingText.textContent = `Current image: "${imagePrompt}". Type a new prompt or "regenerate"!`;
+                        imageLoadingText.style.display = 'block';
+
                     } else {
                          throw new Error("No image data or invalid response received from API.");
                     }
 
                 } catch (error) {
                     console.error("Image Generation Error:", error);
-                    const match = error.message.match(/HTTP error! status: (\d+)/);
-                    const statusCode = match ? match[1] : null;
-
-                    // *** CRITICAL MOCKING LOGIC FOR IMAGE GENERATION ***
-                    if (statusCode === '403') {
-                        // MOCK SUCCESS: If we hit a permissions error, display a placeholder image
-                        imageLoadingText.textContent = `Image generation failed (Network Block). Displaying MOCK placeholder for: "${imagePrompt}"`;
-                        generatedImage.src = `https://placehold.co/400x300/8A2BE2/ffffff?text=MOCK+IMAGE+${encodeURIComponent(imagePrompt.substring(0, 15))}...`;
-                        generatedImage.alt = imagePrompt;
-                        generatedImage.style.display = 'block';
-                    } else {
-                        // Handle other errors
-                        imageLoadingText.textContent = `Failed to generate image. Please try again! Error: ${error.message}`;
-                    }
-                    // *** END MOCKING LOGIC ***
-
+                    // If the error isn't a 403 (e.g., a connection time-out or internal error)
+                    generateMockImage(imagePrompt);
                 } finally {
                     sendButton.disabled = false;
                     userInput.value = '';
-                    // Update display message after successful generation/mock
-                    if (generatedImage.style.display === 'block') {
-                        lastImagePrompt = imagePrompt;
-                        imageLoadingText.textContent = `Current image: "${imagePrompt}". Type a new prompt or "regenerate"!`;
-                    }
                 }
             };
 
